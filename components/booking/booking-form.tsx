@@ -53,15 +53,22 @@ function getNext7Days(slots: AvailabilitySlot[]) {
   for (let i = 0; i <= 14; i++) {
     const d = new Date(today);
     d.setDate(today.getDate() + i);
-    if (availableDays.has(d.getDay())) {
-      days.push({
-        date: d,
-        label: i === 0
-          ? `Hari ini, ${d.getDate()} ${d.toLocaleDateString("id-ID", { month: "short" })}`
-          : `${DAY_SHORT[d.getDay()]}, ${d.getDate()} ${d.toLocaleDateString("id-ID", { month: "short" })}`,
-        available: true,
-      });
+    if (!availableDays.has(d.getDay())) continue;
+
+    // Skip today if no time slots remain
+    if (i === 0) {
+      const todaySlots = getTimeSlotsForDay(slots, d.getDay(), true);
+      if (todaySlots.length === 0) continue;
     }
+
+    days.push({
+      date: d,
+      label: i === 0
+        ? `Hari ini, ${d.getDate()} ${d.toLocaleDateString("id-ID", { month: "short" })}`
+        : `${DAY_SHORT[d.getDay()]}, ${d.getDate()} ${d.toLocaleDateString("id-ID", { month: "short" })}`,
+      available: true,
+    });
+
     if (days.length >= 7) break;
   }
   return days;
@@ -287,24 +294,30 @@ export function BookingForm({
                 {selectedDate.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}
               </span>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {timeSlots.map((time) => {
-                const isSelected = selectedTime === time;
-                return (
-                  <button
-                    key={time}
-                    onClick={() => setSelectedTime(time)}
-                    className={`text-xs px-4 py-2 rounded-lg border transition-colors ${
-                      isSelected
-                        ? "bg-forest-500 text-white border-forest-500"
-                        : "bg-sand-50 text-sand-700 border-sand-200 hover:border-teal-dark/40 hover:bg-sand-100"
-                    }`}
-                  >
-                    {time}
-                  </button>
-                );
-              })}
-            </div>
+            {timeSlots.length === 0 ? (
+              <p className="text-sm text-sand-500">
+                Tidak ada slot tersedia untuk hari ini. Silakan pilih tanggal lain.
+              </p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {timeSlots.map((time) => {
+                  const isSelected = selectedTime === time;
+                  return (
+                    <button
+                      key={time}
+                      onClick={() => setSelectedTime(time)}
+                      className={`text-xs px-4 py-2 rounded-lg border transition-colors ${
+                        isSelected
+                          ? "bg-forest-500 text-white border-forest-500"
+                          : "bg-sand-50 text-sand-700 border-sand-200 hover:border-teal-dark/40 hover:bg-sand-100"
+                      }`}
+                    >
+                      {time}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 
