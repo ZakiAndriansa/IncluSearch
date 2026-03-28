@@ -176,9 +176,9 @@ export function BookingForm({
       {/* Midtrans Snap script */}
       <script
         src={
-          process.env.NODE_ENV === "production"
-            ? "https://app.midtrans.com/snap/snap.js"
-            : "https://app.sandbox.midtrans.com/snap/snap.js"
+          process.env.NEXT_PUBLIC_MIDTRANS_IS_SANDBOX === "true"
+            ? "https://app.sandbox.midtrans.com/snap/snap.js"
+            : "https://app.midtrans.com/snap/snap.js"
         }
         data-client-key={clientKey}
         async
