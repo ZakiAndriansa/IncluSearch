@@ -77,6 +77,7 @@ async function main() {
     },
   ];
 
+  // Test
   for (const expert of expertData) {
     const password = await bcrypt.hash("Expert@123456", 12);
     const user = await prisma.user.upsert({
