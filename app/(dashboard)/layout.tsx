@@ -33,7 +33,7 @@ export default async function DashboardLayout({
       </div>
 
       {/* Bottom nav — mobile only */}
-      <BottomNav />
+      <BottomNav role={session.user.role} />
     </div>
   );
 }

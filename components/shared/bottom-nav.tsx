@@ -8,19 +8,56 @@ import {
   BookOpen,
   Users2,
   User,
+  CalendarDays,
+  Shield,
+  Star,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { UserRole } from "@prisma/client";
 
-const BOTTOM_NAV_ITEMS = [
+interface NavItem {
+  href: string;
+  label: string;
+  icon: React.ElementType;
+  exact?: boolean;
+}
+
+const PARENT_NAV: NavItem[] = [
   { href: "/", label: "Beranda", icon: LayoutDashboard, exact: true },
   { href: "/cari-pakar", label: "Cari Pakar", icon: Users },
-  { href: "/knowledge-hub", label: "Pengetahuan", icon: BookOpen },
+  { href: "/knowledge-hub", label: "Ilmu", icon: BookOpen },
   { href: "/forum", label: "Forum", icon: Users2 },
   { href: "/profil", label: "Profil", icon: User },
 ];
 
-export function BottomNav() {
+const EXPERT_NAV: NavItem[] = [
+  { href: "/", label: "Beranda", icon: LayoutDashboard, exact: true },
+  { href: "/konsultasi", label: "Jadwal", icon: CalendarDays },
+  { href: "/knowledge-hub", label: "Ilmu", icon: BookOpen },
+  { href: "/forum", label: "Forum", icon: Users2 },
+  { href: "/profil", label: "Profil", icon: Star },
+];
+
+const ADMIN_NAV: NavItem[] = [
+  { href: "/", label: "Beranda", icon: LayoutDashboard, exact: true },
+  { href: "/admin", label: "Admin", icon: Shield },
+  { href: "/knowledge-hub", label: "Ilmu", icon: BookOpen },
+  { href: "/profil", label: "Profil", icon: User },
+];
+
+const NAV_BY_ROLE: Record<UserRole, NavItem[]> = {
+  PARENT: PARENT_NAV,
+  EXPERT: EXPERT_NAV,
+  ADMIN: ADMIN_NAV,
+};
+
+interface BottomNavProps {
+  role: UserRole;
+}
+
+export function BottomNav({ role }: BottomNavProps) {
   const pathname = usePathname();
+  const navItems = NAV_BY_ROLE[role] ?? PARENT_NAV;
 
   const isActive = (href: string, exact = false) =>
     exact ? pathname === href : pathname.startsWith(href);
@@ -28,7 +65,7 @@ export function BottomNav() {
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 lg:hidden border-t border-sand-200 bg-white/95 backdrop-blur-md pb-safe">
       <div className="flex items-center justify-around px-2 pt-2 pb-1">
-        {BOTTOM_NAV_ITEMS.map((item) => {
+        {navItems.map((item) => {
           const active = isActive(item.href, item.exact);
           return (
             <Link
@@ -36,16 +73,11 @@ export function BottomNav() {
               href={item.href}
               className={cn(
                 "flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all tap-target min-w-[56px]",
-                active
-                  ? "text-forest-500"
-                  : "text-sand-400 hover:text-sand-600"
+                active ? "text-forest-500" : "text-sand-400 hover:text-sand-600"
               )}
             >
               <item.icon
-                className={cn(
-                  "w-5 h-5 transition-transform",
-                  active && "scale-110"
-                )}
+                className={cn("w-5 h-5 transition-transform", active && "scale-110")}
               />
               <span
                 className={cn(

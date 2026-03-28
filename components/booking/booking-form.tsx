@@ -50,13 +50,15 @@ function getNext7Days(slots: AvailabilitySlot[]) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  for (let i = 1; i <= 14; i++) {
+  for (let i = 0; i <= 14; i++) {
     const d = new Date(today);
     d.setDate(today.getDate() + i);
     if (availableDays.has(d.getDay())) {
       days.push({
         date: d,
-        label: `${DAY_SHORT[d.getDay()]}, ${d.getDate()} ${d.toLocaleDateString("id-ID", { month: "short" })}`,
+        label: i === 0
+          ? `Hari ini, ${d.getDate()} ${d.toLocaleDateString("id-ID", { month: "short" })}`
+          : `${DAY_SHORT[d.getDay()]}, ${d.getDate()} ${d.toLocaleDateString("id-ID", { month: "short" })}`,
         available: true,
       });
     }
@@ -65,7 +67,7 @@ function getNext7Days(slots: AvailabilitySlot[]) {
   return days;
 }
 
-function getTimeSlotsForDay(slots: AvailabilitySlot[], dayOfWeek: number): string[] {
+function getTimeSlotsForDay(slots: AvailabilitySlot[], dayOfWeek: number, isToday: boolean): string[] {
   const slot = slots.find((s) => s.dayOfWeek === dayOfWeek);
   if (!slot) return [];
 
@@ -75,7 +77,12 @@ function getTimeSlotsForDay(slots: AvailabilitySlot[], dayOfWeek: number): strin
   const startTotal = startH * 60 + startM;
   const endTotal = endH * 60 + endM;
 
+  const nowTotal = isToday
+    ? new Date().getHours() * 60 + new Date().getMinutes()
+    : 0;
+
   for (let t = startTotal; t + 30 <= endTotal; t += 60) {
+    if (isToday && t + 30 <= nowTotal) continue;
     const h = Math.floor(t / 60).toString().padStart(2, "0");
     const m = (t % 60).toString().padStart(2, "0");
     times.push(`${h}:${m}`);
@@ -100,8 +107,12 @@ export function BookingForm({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const isSelectedToday = selectedDate
+    ? selectedDate.toDateString() === new Date().toDateString()
+    : false;
+
   const timeSlots = selectedDate
-    ? getTimeSlotsForDay(expert.availabilitySlots, selectedDate.getDay())
+    ? getTimeSlotsForDay(expert.availabilitySlots, selectedDate.getDay(), isSelectedToday)
     : [];
 
   const totalAmount = Math.round((expert.hourlyRate * duration) / 60);

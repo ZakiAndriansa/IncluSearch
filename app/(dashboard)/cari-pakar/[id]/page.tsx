@@ -20,6 +20,7 @@ import {
   CalendarDays,
   ArrowLeft,
   MessageCircle,
+  ClipboardList,
 } from "lucide-react";
 import type { Metadata } from "next";
 
@@ -163,15 +164,30 @@ export default async function ExpertProfilePage({
               <span className="text-sm font-normal text-sand-400">/jam</span>
             </p>
           </div>
-          <Button
-            asChild
-            className="bg-forest-500 hover:bg-forest-600 text-white gap-2"
-          >
-            <Link href={`/cari-pakar/${expert.id}/booking`}>
-              <MessageCircle className="w-4 h-4" />
-              Mulai Konsultasi
-            </Link>
-          </Button>
+          {session.user.role === "PARENT" && !activeAssessment ? (
+            <div className="flex flex-col items-end gap-1">
+              <Button
+                asChild
+                className="bg-amber-500 hover:bg-amber-600 text-white gap-2"
+              >
+                <Link href="/profil?tab=asesmen">
+                  <ClipboardList className="w-4 h-4" />
+                  Isi Asesmen Dulu
+                </Link>
+              </Button>
+              <p className="text-xs text-sand-400">Diperlukan sebelum konsultasi</p>
+            </div>
+          ) : (
+            <Button
+              asChild
+              className="bg-forest-500 hover:bg-forest-600 text-white gap-2"
+            >
+              <Link href={`/cari-pakar/${expert.id}/booking`}>
+                <MessageCircle className="w-4 h-4" />
+                Mulai Konsultasi
+              </Link>
+            </Button>
+          )}
         </div>
       </div>
 
