@@ -258,7 +258,7 @@ async function main() {
   console.log("Expert 1: siti.rahayu@ortoconnect.id / Expert@123456");
   console.log("─────────────────────────────────");
 }
-
+// test
 main()
   .catch(console.error)
   .finally(() => prisma.$disconnect());
