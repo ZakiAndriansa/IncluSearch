@@ -1,0 +1,493 @@
+// OrtoPedagogik Connect — Prisma Schema
+// Database: Neon PostgreSQL (serverless)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─────────────────────────────────────────────
+// AUTH (NextAuth v5 + Prisma Adapter)
+// ─────────────────────────────────────────────
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ─────────────────────────────────────────────
+// USERS
+// ─────────────────────────────────────────────
+
+enum UserRole {
+  PARENT
+  EXPERT
+  ADMIN
+}
+
+model User {
+  id                String    @id @default(cuid())
+  email             String    @unique
+  emailVerified     DateTime?
+  name              String?
+  image             String?
+  password          String?   // hashed, null for OAuth
+  role              UserRole  @default(PARENT)
+  isPremium         Boolean   @default(false)
+  premiumExpiresAt  DateTime?
+  phone             String?
+  bio               String?   @db.Text
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relations
+  accounts          Account[]
+  sessions          Session[]
+  expertProfile     ExpertProfile?
+  assessments       Assessment[]
+  consultationQuota ConsultationQuota?
+  consultationsAsParent Consultation[] @relation("ParentConsultations")
+  sentMessages      ChatMessage[]
+  bookmarks         Bookmark[]
+  payments          Payment[]
+
+  @@index([email])
+  @@index([role])
+  @@index([isPremium])
+}
+
+// ─────────────────────────────────────────────
+// EXPERT PROFILES
+// ─────────────────────────────────────────────
+
+enum SpecializationType {
+  LEARNING_DIFFICULTIES
+  BEHAVIORAL_SUPPORT
+  COMMUNICATION_DISORDERS
+  SENSORY_PROCESSING
+  AUTISM_SPECTRUM
+  ADHD
+  DOWN_SYNDROME
+  EMOTIONAL_REGULATION
+  SOCIAL_SKILLS
+  MOTOR_DEVELOPMENT
+}
+
+enum LocationType {
+  ONLINE
+  OFFLINE
+  BOTH
+}
+
+model ExpertProfile {
+  id               String               @id @default(cuid())
+  userId           String               @unique
+  specializations  SpecializationType[]
+  bio              String               @db.Text
+  education        String?
+  certifications   String[]
+  yearsExperience  Int                  @default(0)
+  hourlyRate       Int                  // in IDR (rupiah)
+  rating           Float                @default(0)
+  totalReviews     Int                  @default(0)
+  locationType     LocationType         @default(ONLINE)
+  city             String?
+  province         String?
+  isVerified       Boolean              @default(false)
+  isAvailable      Boolean              @default(true)
+  profilePhotoUrl  String?
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+
+  // Relations
+  user             User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  availabilitySlots AvailabilitySlot[]
+  consultations    Consultation[]       @relation("ExpertConsultations")
+  matchScores      MatchScore[]
+  reviews          ExpertReview[]
+
+  @@index([isAvailable])
+  @@index([rating])
+  @@index([locationType])
+}
+
+model AvailabilitySlot {
+  id           String        @id @default(cuid())
+  expertId     String
+  dayOfWeek    Int           // 0=Sun, 1=Mon, ..., 6=Sat
+  startTime    String        // "09:00"
+  endTime      String        // "17:00"
+  isActive     Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+
+  expert       ExpertProfile @relation(fields: [expertId], references: [id], onDelete: Cascade)
+
+  @@index([expertId])
+}
+
+model ExpertReview {
+  id           String        @id @default(cuid())
+  expertId     String
+  reviewerId   String
+  rating       Int           // 1-5
+  comment      String?       @db.Text
+  createdAt    DateTime      @default(now())
+
+  expert       ExpertProfile @relation(fields: [expertId], references: [id], onDelete: Cascade)
+
+  @@index([expertId])
+}
+
+// ─────────────────────────────────────────────
+// ASSESSMENTS
+// ─────────────────────────────────────────────
+
+enum ChallengeType {
+  LEARNING_DIFFICULTIES
+  BEHAVIORAL_CHALLENGES
+  COMMUNICATION_ISSUES
+  SENSORY_PROCESSING
+  SOCIAL_EMOTIONAL
+  MULTIPLE_CHALLENGES
+}
+
+enum LearningEnvironment {
+  HOME
+  SCHOOL
+  BOTH
+  THERAPY_CENTER
+}
+
+model Assessment {
+  id               String              @id @default(cuid())
+  userId           String
+  childName        String
+  childAge         Int
+  challengeType    ChallengeType
+  challengeDetails String?             @db.Text
+  learningEnv      LearningEnvironment
+  goals            String[]
+  locationPref     LocationType        @default(ONLINE)
+  isActive         Boolean             @default(true)
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  // Relations
+  user             User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  matchScores      MatchScore[]
+
+  @@index([userId])
+  @@index([isActive])
+  @@index([userId, isActive])
+}
+
+// ─────────────────────────────────────────────
+// CONSULTATION QUOTA (free users)
+// ─────────────────────────────────────────────
+
+model ConsultationQuota {
+  id                 String    @id @default(cuid())
+  userId             String    @unique
+  lastConsultationAt DateTime?
+  nextAvailableAt    DateTime?
+  updatedAt          DateTime  @updatedAt
+
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ─────────────────────────────────────────────
+// CONSULTATIONS
+// ─────────────────────────────────────────────
+
+enum ConsultationStatus {
+  PENDING_PAYMENT
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  REFUNDED
+}
+
+model Consultation {
+  id             String             @id @default(cuid())
+  parentId       String
+  expertId       String
+  status         ConsultationStatus @default(PENDING_PAYMENT)
+  scheduledAt    DateTime
+  durationMins   Int                @default(60)
+  paidAt         DateTime?
+  completedAt    DateTime?
+  sessionNotes   String?            @db.Text
+  totalAmount    Int                // in IDR
+  chatRoomId     String?            @unique
+  videoCallUrl   String?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  // Relations
+  parent         User               @relation("ParentConsultations", fields: [parentId], references: [id])
+  expert         ExpertProfile      @relation("ExpertConsultations", fields: [expertId], references: [id])
+  chatRoom       ChatRoom?          @relation(fields: [chatRoomId], references: [id])
+  payment        Payment?
+
+  @@index([parentId])
+  @@index([expertId])
+  @@index([status])
+  @@index([scheduledAt])
+}
+
+// ─────────────────────────────────────────────
+// CHAT
+// ─────────────────────────────────────────────
+
+model ChatRoom {
+  id            String        @id @default(cuid())
+  createdAt     DateTime      @default(now())
+
+  // Relations
+  consultation  Consultation?
+  messages      ChatMessage[]
+
+  @@index([id])
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  FILE
+  SYSTEM
+}
+
+model ChatMessage {
+  id         String      @id @default(cuid())
+  roomId     String
+  senderId   String
+  content    String      @db.Text
+  type       MessageType @default(TEXT)
+  fileUrl    String?
+  isRead     Boolean     @default(false)
+  sentAt     DateTime    @default(now())
+
+  // Relations
+  room       ChatRoom    @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  sender     User        @relation(fields: [senderId], references: [id])
+
+  @@index([roomId, sentAt])
+}
+
+// ─────────────────────────────────────────────
+// KNOWLEDGE HUB
+// ─────────────────────────────────────────────
+
+enum ContentType {
+  ARTICLE
+  VIDEO
+  MODULE
+}
+
+enum ContentCategory {
+  LEARNING_DIFFICULTIES
+  BEHAVIORAL_SUPPORT
+  COMMUNICATION_DISORDERS
+  SENSORY_PROCESSING
+  PARENTING_TIPS
+  EXPERT_GUIDES
+  CASE_STUDIES
+}
+
+model KnowledgeContent {
+  id           String          @id @default(cuid())
+  title        String
+  slug         String          @unique
+  excerpt      String?         @db.Text
+  content      String?         @db.Text
+  type         ContentType
+  category     ContentCategory
+  isPremium    Boolean         @default(false)
+  videoUrl     String?
+  thumbnailUrl String?
+  ageRangeMin  Int?
+  ageRangeMax  Int?
+  readTimeMins Int?
+  viewCount    Int             @default(0)
+  publishedAt  DateTime?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  // Relations
+  bookmarks    Bookmark[]
+
+  @@index([type])
+  @@index([category])
+  @@index([isPremium])
+  @@index([slug])
+  @@index([publishedAt])
+  @@index([publishedAt, isPremium])
+}
+
+model Bookmark {
+  id        String           @id @default(cuid())
+  userId    String
+  contentId String
+  createdAt DateTime         @default(now())
+
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content   KnowledgeContent @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, contentId])
+  @@index([userId])
+}
+
+// ─────────────────────────────────────────────
+// COMMUNITY / FORUM DIRECTORY
+// ─────────────────────────────────────────────
+
+enum ABKFocusType {
+  AUTISM
+  ADHD
+  DOWN_SYNDROME
+  DYSLEXIA
+  HEARING_IMPAIRMENT
+  VISUAL_IMPAIRMENT
+  CEREBRAL_PALSY
+  INTELLECTUAL_DISABILITY
+  MULTIPLE_DISABILITIES
+  GENERAL_ABK
+}
+
+enum OrgType {
+  FOUNDATION
+  SCHOOL
+  THERAPY_CENTER
+  SUPPORT_GROUP
+  GOVERNMENT
+  NGO
+}
+
+model Community {
+  id           String         @id @default(cuid())
+  name         String
+  slug         String         @unique
+  description  String         @db.Text
+  focusAreas   ABKFocusType[]
+  orgType      OrgType
+  region       String
+  province     String
+  contactEmail String?
+  contactPhone String?
+  website      String?
+  logoUrl      String?
+  memberCount  Int            @default(0)
+  isVerified   Boolean        @default(false)
+  isActive     Boolean        @default(true)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  @@index([province])
+  @@index([orgType])
+  @@index([isActive])
+}
+
+// ─────────────────────────────────────────────
+// MATCHING SCORES
+// ─────────────────────────────────────────────
+
+model MatchScore {
+  id           String        @id @default(cuid())
+  assessmentId String
+  expertId     String
+  score        Float         // 0-100
+  reasons      String[]
+  breakdown    Json?         // { specialization: 40, challengeType: 30, ... }
+  createdAt    DateTime      @default(now())
+
+  assessment   Assessment    @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  expert       ExpertProfile @relation(fields: [expertId], references: [id], onDelete: Cascade)
+
+  @@unique([assessmentId, expertId])
+  @@index([assessmentId])
+  @@index([score])
+}
+
+// ─────────────────────────────────────────────
+// PAYMENTS (Midtrans)
+// ─────────────────────────────────────────────
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentType {
+  CONSULTATION
+  PREMIUM_SUBSCRIPTION
+}
+
+model Payment {
+  id               String        @id @default(cuid())
+  userId           String
+  consultationId   String?       @unique
+  type             PaymentType
+  amount           Int           // in IDR
+  status           PaymentStatus @default(PENDING)
+  midtransOrderId  String        @unique
+  midtransToken    String?
+  midtransUrl      String?
+  paidAt           DateTime?
+  expiresAt        DateTime?
+  metadata         Json?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  // Relations
+  user             User          @relation(fields: [userId], references: [id])
+  consultation     Consultation? @relation(fields: [consultationId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+  @@index([midtransOrderId])
+}

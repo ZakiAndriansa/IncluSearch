@@ -1,0 +1,86 @@
+import Image from "next/image";
+import Link from "next/link";
+
+export default function AuthLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="min-h-screen grid lg:grid-cols-2">
+      {/* Left panel — hero */}
+      <div className="hidden lg:flex flex-col bg-forest-gradient relative overflow-hidden">
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-20 left-20 w-64 h-64 rounded-full bg-teal-light blur-3xl" />
+          <div className="absolute bottom-20 right-20 w-80 h-80 rounded-full bg-olive-400 blur-3xl" />
+        </div>
+
+        <div className="relative z-10 flex flex-col h-full p-12 justify-between">
+          <Link href="/" className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+              <span className="text-white font-bold text-lg font-serif">O</span>
+            </div>
+            <span className="text-white font-semibold text-lg">
+              IncluSearch
+            </span>
+          </Link>
+
+          <div className="space-y-6">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 text-teal-light text-sm font-medium">
+              <span className="w-2 h-2 rounded-full bg-teal-light animate-pulse" />
+              Platform Terpercaya untuk ABK
+            </div>
+
+            <h1 className="text-4xl xl:text-5xl font-serif font-bold text-white leading-tight">
+              Bersama kita dukung{" "}
+              <span className="text-teal-light">tumbuh kembang</span> anak yang
+              luar biasa
+            </h1>
+
+            <p className="text-white/70 text-lg leading-relaxed max-w-md">
+              Temukan pakar ortopedagogik terbaik, akses pengetahuan berkualitas,
+              dan bergabung dengan komunitas yang peduli terhadap Anak
+              Berkebutuhan Khusus.
+            </p>
+
+            <div className="flex items-center gap-6 pt-4">
+              {[
+                { label: "Pakar Terverifikasi", value: "200+" },
+                { label: "Keluarga Terbantu", value: "5.000+" },
+                { label: "Rating Kepuasan", value: "4.9/5" },
+              ].map((stat) => (
+                <div key={stat.label} className="text-center">
+                  <div className="text-2xl font-bold text-white">
+                    {stat.value}
+                  </div>
+                  <div className="text-white/60 text-xs mt-1">{stat.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <p className="text-white/40 text-sm">
+            © 2026 IncluSearch. Hak cipta dilindungi.
+          </p>
+        </div>
+      </div>
+
+      {/* Right panel — auth form */}
+      <div className="flex items-center justify-center p-6 lg:p-12 bg-sand-50">
+        <div className="w-full max-w-md">
+          {/* Mobile logo */}
+          <div className="flex lg:hidden items-center justify-center gap-2 mb-8">
+            <div className="w-9 h-9 rounded-xl bg-forest-500 flex items-center justify-center">
+              <span className="text-white font-bold font-serif">O</span>
+            </div>
+            <span className="font-semibold text-forest-500 text-lg">
+              IncluSearch
+            </span>
+          </div>
+
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}

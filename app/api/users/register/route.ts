@@ -1,0 +1,66 @@
+import { NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
+import { prisma } from "@/lib/prisma";
+import { z } from "zod";
+
+const RegisterSchema = z.object({
+  name: z.string().min(2, "Nama minimal 2 karakter"),
+  email: z.string().email("Email tidak valid"),
+  password: z.string().min(8, "Password minimal 8 karakter"),
+  role: z.enum(["PARENT", "EXPERT"]).default("PARENT"),
+});
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    const data = RegisterSchema.parse(body);
+
+    // Check duplicate email
+    const existing = await prisma.user.findUnique({
+      where: { email: data.email },
+    });
+    if (existing) {
+      return NextResponse.json(
+        { error: "Email sudah terdaftar" },
+        { status: 409 }
+      );
+    }
+
+    const hashedPassword = await bcrypt.hash(data.password, 12);
+
+    const user = await prisma.$transaction(async (tx) => {
+      const newUser = await tx.user.create({
+        data: {
+          name: data.name,
+          email: data.email,
+          password: hashedPassword,
+          role: data.role,
+        },
+      });
+
+      // Initialize quota record
+      await tx.consultationQuota.create({
+        data: { userId: newUser.id },
+      });
+
+      return newUser;
+    });
+
+    return NextResponse.json(
+      { message: "Akun berhasil dibuat", userId: user.id },
+      { status: 201 }
+    );
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: err.errors[0].message },
+        { status: 400 }
+      );
+    }
+    console.error("[REGISTER]", err);
+    return NextResponse.json(
+      { error: "Terjadi kesalahan server" },
+      { status: 500 }
+    );
+  }
+}

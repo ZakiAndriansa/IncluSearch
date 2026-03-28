@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir=false --import-alias=\"@/*\" --no-git)",
+      "Read(//c/Users/zandr/Documents/ortoconnect/**)",
+      "Bash(npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir=false --import-alias=\"@/*\" --no-git --no-turbopack)",
+      "Bash(npm install:*)",
+      "Bash(npx prisma:*)",
+      "Bash(npx tsc:*)",
+      "Bash(find /c/Users/zandr/Documents/IncluSearch/lib -type f -name *.ts -o -name *.tsx)",
+      "Bash(find /c/Users/zandr/Documents/IncluSearch/public -type f \\\\\\(-name *.png -o -name *.jpg -o -name *.jpeg -o -name *.webp \\\\\\))",
+      "Bash(grep -r \"img\\\\|Image\\\\|<image\" /c/Users/zandr/Documents/IncluSearch/app /c/Users/zandr/Documents/IncluSearch/components --include=*.tsx --include=*.ts)",
+      "Bash(grep -r process.env. /c/Users/zandr/Documents/IncluSearch/lib /c/Users/zandr/Documents/IncluSearch/app --include=*.ts --include=*.tsx)",
+      "Bash(grep -r \"cache\\\\|NEXT_PUBLIC\" /c/Users/zandr/Documents/IncluSearch/app /c/Users/zandr/Documents/IncluSearch/lib --include=*.ts --include=*.tsx)",
+      "Bash(grep -r \"Pusher\\\\|pusher\\\\|MIDTRANS_CLIENT_KEY\" /c/Users/zandr/Documents/IncluSearch/components /c/Users/zandr/Documents/IncluSearch/app --include=*.tsx --include=*.ts)",
+      "Bash(grep -r \"\\\\.env\\\\|DATABASE_URL\\\\|DIRECT_URL\" /c/Users/zandr/Documents/IncluSearch --include=*.md --include=*.env*)",
+      "Bash(grep -r \"console\\\\.log\\\\|debugger\" /c/Users/zandr/Documents/IncluSearch/app /c/Users/zandr/Documents/IncluSearch/lib --include=*.ts --include=*.tsx)",
+      "Bash(grep -r \"import.*from.*@/lib\\\\|import.*from.*@/components\" /c/Users/zandr/Documents/IncluSearch/lib --include=*.ts --include=*.tsx)",
+      "Bash(grep -r \"fill\\\\|priority\\\\|sizes\" /c/Users/zandr/Documents/IncluSearch/components --include=*.tsx)",
+      "Bash(grep -n \"\\\\.findMany\\\\|\\\\.count\\\\|await prisma\" /c/Users/zandr/Documents/IncluSearch/app/api/chat/[roomId]/messages/route.ts)",
+      "Bash(wc:*)",
+      "Bash(ls:*)",
+      "Bash(grep -r NEXT_PUBLIC_ /c/Users/zandr/Documents/IncluSearch/app /c/Users/zandr/Documents/IncluSearch/components /c/Users/zandr/Documents/IncluSearch/lib --include=*.tsx --include=*.ts)",
+      "Bash(npx tsx -e \":*)",
+      "Bash(npx tsx:*)",
+      "Bash(npx next:*)"
+    ]
+  }
+}
