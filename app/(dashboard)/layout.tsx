@@ -42,7 +42,7 @@ export default async function DashboardLayout({
         <Sidebar user={user} />
 
         {/* Main content */}
-        <main className="flex-1 lg:ml-64 min-h-[calc(100vh-4rem)] pb-20 lg:pb-6">
+        <main className="flex-1 lg:ml-64 min-h-[calc(100vh-3.5rem)] pb-20 lg:pb-6">
           <div className="max-w-6xl mx-auto px-4 lg:px-8 py-6">
             {children}
           </div>

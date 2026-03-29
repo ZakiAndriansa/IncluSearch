@@ -72,7 +72,7 @@ export function Sidebar({ user }: SidebarProps) {
     exact ? pathname === href : pathname.startsWith(href);
 
   return (
-    <aside className="fixed left-0 top-16 bottom-0 w-64 border-r border-sand-200 bg-white hidden lg:flex flex-col z-30">
+    <aside className="fixed left-0 top-14 bottom-0 w-64 border-r border-sand-200 bg-white hidden lg:flex flex-col z-30">
       {/* Role badge */}
       <div className="px-4 pt-4 pb-2">
         <div className={cn(

@@ -112,8 +112,8 @@ export function ExpertSearch({
         </form>
 
         {/* Filter row */}
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-1.5 text-sm text-sand-500">
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap sm:items-center gap-2 sm:gap-3">
+          <div className="col-span-2 sm:col-span-1 flex items-center gap-1.5 text-sm text-sand-500">
             <SlidersHorizontal className="w-4 h-4" />
             <span>Filter:</span>
           </div>
@@ -122,7 +122,7 @@ export function ExpertSearch({
             value={searchParams.spec ?? "all"}
             onValueChange={(v) => updateFilter("spec", v)}
           >
-            <SelectTrigger className="h-9 w-44 border-sand-300 text-sm">
+            <SelectTrigger className="h-9 w-full sm:w-44 border-sand-300 text-sm">
               <SelectValue placeholder="Spesialisasi" />
             </SelectTrigger>
             <SelectContent>
@@ -139,7 +139,7 @@ export function ExpertSearch({
             value={searchParams.location ?? "all"}
             onValueChange={(v) => updateFilter("location", v)}
           >
-            <SelectTrigger className="h-9 w-40 border-sand-300 text-sm">
+            <SelectTrigger className="h-9 w-full sm:w-40 border-sand-300 text-sm">
               <SelectValue placeholder="Lokasi" />
             </SelectTrigger>
             <SelectContent>
@@ -154,7 +154,7 @@ export function ExpertSearch({
             value={searchParams.sortBy ?? "rating"}
             onValueChange={(v) => updateFilter("sortBy", v)}
           >
-            <SelectTrigger className="h-9 w-36 border-sand-300 text-sm">
+            <SelectTrigger className="h-9 w-full sm:w-36 border-sand-300 text-sm">
               <SelectValue placeholder="Urutkan" />
             </SelectTrigger>
             <SelectContent>
@@ -169,7 +169,7 @@ export function ExpertSearch({
               variant="ghost"
               size="sm"
               onClick={clearFilters}
-              className="h-9 text-sand-500 hover:text-forest-500 text-sm"
+              className="col-span-2 sm:col-span-1 h-9 text-sand-500 hover:text-forest-500 text-sm"
             >
               <X className="w-3.5 h-3.5 mr-1" />
               Hapus filter

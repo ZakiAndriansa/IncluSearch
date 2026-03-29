@@ -31,8 +31,8 @@ interface NavbarProps {
 
 export function Navbar({ user }: NavbarProps) {
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-sand-200 bg-white/90 backdrop-blur-md h-16 hidden lg:flex">
-      <div className="flex items-center justify-between w-full px-6">
+    <header className="sticky top-0 z-40 w-full border-b border-sand-200 bg-white/90 backdrop-blur-md h-14 flex">
+      <div className="flex items-center justify-between w-full px-4 md:px-6">
         {/* Logo */}
         <Link href="/" className="flex items-center">
           <Image
@@ -40,25 +40,23 @@ export function Navbar({ user }: NavbarProps) {
             alt="IncluSearch"
             width={140}
             height={48}
-            className="h-14 w-auto object-contain scale-125 origin-left"
+            className="h-8 md:h-10 w-auto object-contain"
             priority
           />
         </Link>
 
         {/* Right actions */}
-        <div className="flex items-center gap-3">
-          {/* Premium badge */}
+        <div className="flex items-center gap-2 md:gap-3">
+          {/* Premium badge — hidden on small mobile */}
           {user.isPremium && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-amber-400 to-yellow-300 border border-amber-300 shadow-sm">
+            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-amber-400 to-yellow-300 border border-amber-300 shadow-sm">
               <Crown className="w-3.5 h-3.5 text-amber-900" />
-              <span className="text-xs font-medium text-amber-900">
-                Premium
-              </span>
+              <span className="text-xs font-medium text-amber-900">Premium</span>
             </div>
           )}
 
-          {/* Notifications */}
-          <Button variant="ghost" size="icon" className="relative tap-target">
+          {/* Notifications — hidden on mobile */}
+          <Button variant="ghost" size="icon" className="relative tap-target hidden sm:inline-flex">
             <Bell className="w-5 h-5 text-sand-600" />
             <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-olive-500" />
           </Button>
@@ -67,12 +65,19 @@ export function Navbar({ user }: NavbarProps) {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="flex items-center gap-2.5 rounded-xl p-1.5 hover:bg-sand-100 transition-colors tap-target">
-                <Avatar className="w-8 h-8">
-                  <AvatarImage src={user.image ?? undefined} alt={user.name ?? ""} />
-                  <AvatarFallback className="bg-forest-100 text-forest-500 text-sm font-semibold">
-                    {getInitials(user.name ?? user.email ?? "U")}
-                  </AvatarFallback>
-                </Avatar>
+                <div className="relative">
+                  <Avatar className={`w-8 h-8 ${user.isPremium ? "ring-2 ring-amber-400 ring-offset-1" : ""}`}>
+                    <AvatarImage src={user.image ?? undefined} alt={user.name ?? ""} />
+                    <AvatarFallback className="bg-forest-100 text-forest-500 text-sm font-semibold">
+                      {getInitials(user.name ?? user.email ?? "U")}
+                    </AvatarFallback>
+                  </Avatar>
+                  {user.isPremium && (
+                    <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-400 border-2 border-white flex items-center justify-center sm:hidden">
+                      <Crown className="w-2.5 h-2.5 text-white" />
+                    </div>
+                  )}
+                </div>
                 <div className="text-left hidden xl:block">
                   <div className="flex items-center gap-1.5 leading-none">
                     <span className="text-sm font-medium text-forest-500">

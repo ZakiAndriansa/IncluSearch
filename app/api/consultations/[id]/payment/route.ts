@@ -75,9 +75,12 @@ export async function GET(
     }
   }
 
+  const orderId = consultation.payment?.midtransOrderId;
+
   return NextResponse.json({
     token,
     url,
+    orderId,
     clientKey: MIDTRANS_CLIENT_KEY,
     expertName: consultation.expert.user.name ?? "Pakar",
     amount: consultation.totalAmount,

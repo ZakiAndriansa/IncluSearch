@@ -74,7 +74,7 @@ export default async function CariPakarPage({
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h1 className="text-2xl font-serif font-bold text-forest-500">
+        <h1 className="text-xl sm:text-2xl font-serif font-bold text-forest-500">
           Cari Pakar Ortopedagogik
         </h1>
         <p className="text-sand-500 text-sm mt-1">

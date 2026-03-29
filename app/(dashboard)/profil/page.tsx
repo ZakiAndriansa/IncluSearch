@@ -9,7 +9,7 @@ export const metadata: Metadata = { title: "Profil Saya" };
 export default async function ProfilPage({
   searchParams,
 }: {
-  searchParams: { tab?: string; status?: string };
+  searchParams: { tab?: string; status?: string; order_id?: string };
 }) {
   const session = await auth();
   if (!session) redirect("/login");
@@ -42,22 +42,14 @@ export default async function ProfilPage({
   if (!user) redirect("/login");
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div>
-        <h1 className="text-2xl font-serif font-bold text-forest-500">
-          Profil Saya
-        </h1>
-        <p className="text-sand-500 text-sm mt-1">
-          Kelola akun, asesmen, dan langganan Anda
-        </p>
-      </div>
-
+    <div className="animate-fade-in">
       <ProfileTabs
         user={user}
         assessments={assessments}
         quota={quota}
         activeTab={searchParams.tab ?? "profil"}
         paymentStatus={searchParams.status}
+        paymentOrderId={searchParams.order_id}
       />
     </div>
   );

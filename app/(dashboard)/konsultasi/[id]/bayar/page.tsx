@@ -13,6 +13,7 @@ export default function BayarPage() {
 
   const [paymentData, setPaymentData] = useState<{
     token: string;
+    orderId: string;
     clientKey: string;
     expertName: string;
     amount: number;
@@ -69,7 +70,7 @@ export default function BayarPage() {
     snapCalledRef.current = true;
     setSnapOpened(true);
     snap.pay(token, {
-      onSuccess: () => router.push(`/konsultasi/${id}?status=success`),
+      onSuccess: () => router.push(`/konsultasi/${id}?status=success&order_id=${paymentData?.orderId ?? ""}`),
       onPending: () => router.push(`/konsultasi/${id}?status=pending`),
       onError: () => {
         setError("Pembayaran gagal. Silakan coba lagi.");

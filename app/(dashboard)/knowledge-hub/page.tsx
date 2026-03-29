@@ -80,7 +80,7 @@ export default async function KnowledgeHubPage({
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-serif font-bold text-forest-500">
+        <h1 className="text-xl sm:text-2xl font-serif font-bold text-forest-500">
           Knowledge Hub
         </h1>
         <p className="text-sand-500 text-sm mt-1">
@@ -94,7 +94,7 @@ export default async function KnowledgeHubPage({
           <div className="absolute inset-0 opacity-10">
             <div className="absolute top-0 right-0 w-48 h-48 rounded-full bg-white blur-2xl" />
           </div>
-          <div className="relative z-10 flex items-center justify-between gap-4">
+          <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
                 <Crown className="w-5 h-5 text-white" />
@@ -110,7 +110,7 @@ export default async function KnowledgeHubPage({
             </div>
             <Link
               href="/profil?tab=premium"
-              className="flex-shrink-0 px-4 py-2 bg-white text-amber-600 rounded-xl text-sm font-semibold hover:bg-amber-50 transition-colors"
+              className="self-start sm:self-auto flex-shrink-0 px-4 py-2 bg-white text-amber-600 rounded-xl text-sm font-semibold hover:bg-amber-50 transition-colors"
             >
               Upgrade
             </Link>

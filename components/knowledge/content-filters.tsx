@@ -43,13 +43,13 @@ export function ContentFilters({ searchParams }: ContentFiltersProps) {
 
   return (
     <div className="bg-white rounded-2xl border border-sand-200 p-4">
-      <div className="flex flex-wrap gap-3">
+      <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 sm:gap-3">
         {/* Category */}
         <Select
           value={searchParams.category ?? "all"}
           onValueChange={(v) => update("category", v)}
         >
-          <SelectTrigger className="h-9 w-44 border-sand-300 text-sm">
+          <SelectTrigger className="h-9 w-full sm:w-44 border-sand-300 text-sm">
             <SelectValue placeholder="Kategori" />
           </SelectTrigger>
           <SelectContent>
@@ -65,7 +65,7 @@ export function ContentFilters({ searchParams }: ContentFiltersProps) {
           value={searchParams.type ?? "all"}
           onValueChange={(v) => update("type", v)}
         >
-          <SelectTrigger className="h-9 w-36 border-sand-300 text-sm">
+          <SelectTrigger className="h-9 w-full sm:w-36 border-sand-300 text-sm">
             <SelectValue placeholder="Tipe Konten" />
           </SelectTrigger>
           <SelectContent>
@@ -79,7 +79,7 @@ export function ContentFilters({ searchParams }: ContentFiltersProps) {
         {/* Search */}
         <form
           onSubmit={(e) => { e.preventDefault(); update("q", (e.currentTarget.elements.namedItem("q") as HTMLInputElement).value || undefined); }}
-          className="flex gap-2 flex-1 min-w-[200px]"
+          className="col-span-2 sm:col-span-1 flex gap-2 sm:flex-1 sm:min-w-[200px]"
         >
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-sand-400" />
@@ -100,7 +100,7 @@ export function ContentFilters({ searchParams }: ContentFiltersProps) {
             variant="ghost"
             size="sm"
             onClick={() => startTransition(() => router.push("/knowledge-hub"))}
-            className="h-9 text-sand-500 hover:text-forest-500 text-sm"
+            className="col-span-2 sm:col-span-1 h-9 text-sand-500 hover:text-forest-500 text-sm"
           >
             <X className="w-3.5 h-3.5 mr-1" />
             Reset

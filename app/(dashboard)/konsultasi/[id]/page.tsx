@@ -14,8 +14,10 @@ export const metadata: Metadata = { title: "Ruang Konsultasi" };
 
 export default async function ConsultationRoomPage({
   params,
+  searchParams,
 }: {
   params: { id: string };
+  searchParams: { status?: string; order_id?: string };
 }) {
   const session = await auth();
   if (!session) redirect("/login");
@@ -95,58 +97,81 @@ export default async function ConsultationRoomPage({
     }
   }
 
-  // Auto-activate chat room if: today is consultation day, no chatRoom yet,
-  // and payment is confirmed (either locally or via Midtrans status check)
+  // Sync payment from Midtrans if user just returned from payment page
+  const returnOrderId = searchParams.order_id ?? consultation.payment?.midtransOrderId;
+  if (consultation.payment?.status !== "PAID" && returnOrderId) {
+    const midtransStatus = await getTransactionStatus(returnOrderId);
+    const isSettled =
+      midtransStatus?.transaction_status === "settlement" ||
+      (midtransStatus?.transaction_status === "capture" &&
+        midtransStatus?.fraud_status === "accept");
+
+    if (isSettled) {
+      const updatedConsultation = await prisma.consultation.update({
+        where: { id: consultation.id },
+        data: { status: "SCHEDULED", paidAt: new Date() },
+        select: { scheduledAt: true },
+      });
+      await prisma.payment.update({
+        where: { midtransOrderId: returnOrderId },
+        data: { status: "PAID", paidAt: new Date() },
+      });
+      if (!consultation.chatRoom) {
+        const chatRoom = await prisma.chatRoom.create({ data: {} });
+        await prisma.consultation.update({
+          where: { id: consultation.id },
+          data: { chatRoomId: chatRoom.id },
+        });
+      }
+      const { recordConsultation } = await import("@/lib/quota-checker");
+      await recordConsultation(consultation.parentId, updatedConsultation.scheduledAt);
+      // Re-fetch updated consultation
+      redirect(`/konsultasi/${params.id}`);
+    }
+  }
+
+  // Auto-complete consultation if scheduled end time has passed
+  if (
+    consultation.status === "SCHEDULED" ||
+    consultation.status === "IN_PROGRESS"
+  ) {
+    const endTime = new Date(
+      new Date(consultation.scheduledAt).getTime() + consultation.durationMins * 60 * 1000
+    );
+    if (new Date() > endTime) {
+      await prisma.consultation.update({
+        where: { id: consultation.id },
+        data: { status: "COMPLETED" },
+      });
+      redirect(`/konsultasi/${params.id}`);
+    }
+  }
+
+  // Auto-activate chat room if: today is consultation day, payment confirmed, no chatRoom yet
   if (!consultation.chatRoom) {
-    const today = new Date();
+    const isPaid = consultation.payment?.status === "PAID";
     const scheduledDate = new Date(consultation.scheduledAt);
+    const today = new Date();
     const isToday =
       today.getFullYear() === scheduledDate.getFullYear() &&
       today.getMonth() === scheduledDate.getMonth() &&
       today.getDate() === scheduledDate.getDate();
 
-    let paymentConfirmed = consultation.payment?.status === "PAID";
-
-    if (!paymentConfirmed && consultation.payment?.midtransOrderId) {
-      const midtransStatus = await getTransactionStatus(
-        consultation.payment.midtransOrderId
-      );
-      paymentConfirmed =
-        midtransStatus?.transaction_status === "settlement" ||
-        (midtransStatus?.transaction_status === "capture" &&
-          midtransStatus?.fraud_status === "accept");
-
-      if (paymentConfirmed) {
-        await prisma.payment.update({
-          where: { midtransOrderId: consultation.payment.midtransOrderId },
-          data: { status: "PAID", paidAt: new Date() },
-        });
-        await prisma.consultation.update({
-          where: { id: consultation.id },
-          data: { status: "SCHEDULED", paidAt: new Date() },
-        });
-      }
-    }
-
-    if (isToday && paymentConfirmed) {
+    if (isPaid && isToday) {
       const chatRoom = await prisma.chatRoom.create({ data: {} });
       await prisma.consultation.update({
         where: { id: consultation.id },
-        data: { chatRoomId: chatRoom.id, status: "SCHEDULED", paidAt: new Date() },
+        data: { chatRoomId: chatRoom.id },
       });
-      // Re-fetch with chatRoom
       redirect(`/konsultasi/${consultation.id}`);
     }
 
-    const isPaid = consultation.payment?.status === "PAID" || paymentConfirmed;
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
           <div className="text-4xl mb-3">{isPaid ? "📅" : "⏳"}</div>
           <h3 className="font-semibold text-forest-500 mb-2">
-            {isPaid
-              ? "Ruang Chat Belum Tersedia"
-              : "Menunggu Konfirmasi Pembayaran"}
+            {isPaid ? "Ruang Chat Belum Tersedia" : "Menunggu Konfirmasi Pembayaran"}
           </h3>
           <p className="text-sand-500 text-sm">
             {isPaid
@@ -159,7 +184,7 @@ export default async function ConsultationRoomPage({
   }
 
   return (
-    <div className="h-[calc(100vh-8rem)] flex flex-col max-w-3xl mx-auto">
+    <div className="h-[calc(100vh-8.5rem)] lg:h-[calc(100vh-7.5rem)] flex flex-col max-w-3xl mx-auto">
       <ConsultationHeader consultation={consultation} currentUserId={session.user.id} />
       {!isParent && parentAssessment && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-start gap-3 text-sm">
@@ -187,6 +212,10 @@ export default async function ConsultationRoomPage({
           image: session.user.image ?? null,
         }}
         consultationStatus={consultation.status}
+        imageOverrides={{
+          [consultation.expert.user.id]: consultation.expert.profilePhotoUrl ?? consultation.expert.user.image,
+          [consultation.parent.id]: consultation.parent.image,
+        }}
       />
     </div>
   );

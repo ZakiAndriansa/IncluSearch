@@ -137,7 +137,7 @@ async function ParentDashboard({ userId, isPremium }: { userId: string; isPremiu
           </Link>
         </div>
         <Suspense fallback={
-          <div className="grid sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {Array.from({ length: 4 }).map((_, i) => <ExpertCardSkeleton key={i} />)}
           </div>
         }>
@@ -221,7 +221,7 @@ async function ExpertDashboard({ userId }: { userId: string }) {
 
       {/* Today's consultations */}
       <section>
-        <h2 className="text-xl font-serif font-semibold text-forest-500 mb-4">
+        <h2 className="text-lg sm:text-xl font-serif font-semibold text-forest-500 mb-4">
           Konsultasi Hari Ini
           {todayConsultations.length > 0 && (
             <span className="ml-2 text-sm font-normal text-teal-dark">
@@ -236,9 +236,9 @@ async function ExpertDashboard({ userId }: { userId: string }) {
         ) : (
           <div className="space-y-3">
             {todayConsultations.map((c) => (
-              <div key={c.id} className="bg-white rounded-2xl border border-sand-200 p-4 flex items-center justify-between gap-3">
+              <div key={c.id} className="bg-white rounded-2xl border border-sand-200 p-4 flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-forest-100 flex items-center justify-center text-forest-500 font-bold text-sm">
+                  <div className="w-10 h-10 rounded-full bg-forest-100 flex items-center justify-center text-forest-500 font-bold text-sm flex-shrink-0">
                     {c.parent.name?.charAt(0) ?? "P"}
                   </div>
                   <div>
@@ -273,15 +273,16 @@ async function ExpertDashboard({ userId }: { userId: string }) {
           </div>
           <div className="space-y-2">
             {upcomingConsultations.map((c) => (
-              <div key={c.id} className="bg-white rounded-2xl border border-sand-200 px-4 py-3 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
+              <div key={c.id} className="bg-white rounded-2xl border border-sand-200 px-4 py-3 flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-3 min-w-0">
                   <CalendarDays className="w-4 h-4 text-sand-400 flex-shrink-0" />
-                  <div>
+                  <div className="min-w-0">
                     <span className="text-sm font-medium text-forest-500">{c.parent.name}</span>
-                    <span className="text-xs text-sand-400 ml-2">{formatDateTime(c.scheduledAt)} · {c.durationMins} mnt</span>
+                    <span className="text-xs text-sand-400 ml-2 hidden sm:inline">{formatDateTime(c.scheduledAt)} · {c.durationMins} mnt</span>
+                    <div className="text-xs text-sand-400 sm:hidden mt-0.5">{formatDateTime(c.scheduledAt)}</div>
                   </div>
                 </div>
-                <span className="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">Terjadwal</span>
+                <span className="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full flex-shrink-0">Terjadwal</span>
               </div>
             ))}
           </div>
@@ -370,14 +371,14 @@ async function AdminDashboard() {
           <h2 className="text-xl font-serif font-semibold text-forest-500 mb-4">Konsultasi Aktif</h2>
           <div className="space-y-2">
             {recentConsultations.map((c) => (
-              <div key={c.id} className="bg-white rounded-2xl border border-sand-200 px-4 py-3 flex items-center justify-between gap-3">
-                <div className="text-sm">
+              <div key={c.id} className="bg-white rounded-2xl border border-sand-200 px-4 py-3 flex flex-wrap items-center justify-between gap-2">
+                <div className="text-sm min-w-0">
                   <span className="font-medium text-forest-500">{c.parent.name}</span>
                   <span className="text-sand-400 mx-2">→</span>
                   <span className="text-sand-600">{c.expert.user.name}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-sand-400">{formatDateTime(c.scheduledAt)}</span>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <span className="text-xs text-sand-400 hidden sm:inline">{formatDateTime(c.scheduledAt)}</span>
                   <span className={`text-xs px-2 py-0.5 rounded-full ${c.status === "IN_PROGRESS" ? "bg-green-50 text-green-600" : "bg-blue-50 text-blue-600"}`}>
                     {c.status === "IN_PROGRESS" ? "Berlangsung" : "Terjadwal"}
                   </span>
@@ -436,7 +437,7 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h1 className="text-2xl font-serif font-bold text-forest-500">{greeting}</h1>
+        <h1 className="text-xl sm:text-2xl font-serif font-bold text-forest-500">{greeting}</h1>
         <p className="text-sand-500 text-sm mt-1">{subtitle}</p>
       </div>
 

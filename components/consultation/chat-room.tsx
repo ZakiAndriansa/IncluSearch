@@ -4,8 +4,6 @@ import {
   useState,
   useEffect,
   useRef,
-  useTransition,
-  useOptimistic,
 } from "react";
 import { Send, Paperclip, Loader2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -35,6 +33,7 @@ interface ChatRoomProps {
     image: string | null;
   };
   consultationStatus: string;
+  imageOverrides?: Record<string, string | null>;
 }
 
 export function ChatRoom({
@@ -42,14 +41,11 @@ export function ChatRoom({
   initialMessages,
   currentUser,
   consultationStatus,
+  imageOverrides,
 }: ChatRoomProps) {
   const [input, setInput] = useState("");
-  const [isPending, startTransition] = useTransition();
+  const [isSending, setIsSending] = useState(false);
   const [messages, setMessages] = useState<Message[]>(initialMessages);
-  const [optimisticMessages, addOptimisticMessage] = useOptimistic(
-    messages,
-    (state, newMsg: Message) => [...state, newMsg]
-  );
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const lastMessageIdRef = useRef<string | undefined>(
@@ -61,7 +57,7 @@ export function ChatRoom({
   // Scroll to bottom on new messages
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [optimisticMessages]);
+  }, [messages]);
 
   // Keep lastMessageIdRef in sync
   useEffect(() => {
@@ -80,7 +76,11 @@ export function ChatRoom({
         if (res.ok) {
           const data = await res.json();
           if (data.messages?.length > 0) {
-            setMessages((prev) => [...prev, ...data.messages]);
+            setMessages((prev) => {
+              const existingIds = new Set(prev.map((m) => m.id));
+              const fresh = data.messages.filter((m: Message) => !existingIds.has(m.id));
+              return fresh.length > 0 ? [...prev.filter((m) => !m.id.startsWith("temp-")), ...fresh] : prev;
+            });
           }
         }
       } catch {
@@ -92,41 +92,39 @@ export function ChatRoom({
 
   async function sendMessage() {
     const content = input.trim();
-    if (!content || isPending) return;
+    if (!content || isSending) return;
 
+    const tempId = `temp-${Date.now()}`;
     const optimistic: Message = {
-      id: `temp-${Date.now()}`,
+      id: tempId,
       content,
       sentAt: new Date(),
       isRead: false,
-      sender: {
-        id: currentUser.id,
-        name: currentUser.name,
-        image: currentUser.image,
-      },
+      sender: { id: currentUser.id, name: currentUser.name, image: currentUser.image },
     };
 
     setInput("");
-    startTransition(async () => {
-      addOptimisticMessage(optimistic);
-      try {
-        const res = await fetch(`/api/chat/${roomId}/messages`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content }),
-        });
+    setIsSending(true);
+    setMessages((prev) => [...prev, optimistic]);
 
-        if (res.ok) {
-          const { message } = await res.json();
-          setMessages((prev) => [
-            ...prev.filter((m) => m.id !== optimistic.id),
-            message,
-          ]);
-        }
-      } catch {
-        setMessages((prev) => prev.filter((m) => m.id !== optimistic.id));
+    try {
+      const res = await fetch(`/api/chat/${roomId}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content }),
+      });
+
+      if (res.ok) {
+        const { message } = await res.json();
+        setMessages((prev) => prev.map((m) => (m.id === tempId ? message : m)));
+      } else {
+        setMessages((prev) => prev.filter((m) => m.id !== tempId));
       }
-    });
+    } catch {
+      setMessages((prev) => prev.filter((m) => m.id !== tempId));
+    } finally {
+      setIsSending(false);
+    }
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
@@ -140,15 +138,15 @@ export function ChatRoom({
     <div className="flex flex-col flex-1 bg-white border border-t-0 border-sand-200 rounded-b-2xl overflow-hidden">
       {/* Messages area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {optimisticMessages.length === 0 && (
+        {messages.length === 0 && (
           <div className="text-center py-8 text-sand-400 text-sm">
             Belum ada pesan. Mulai percakapan!
           </div>
         )}
 
-        {optimisticMessages.map((msg, i) => {
+        {messages.map((msg, i) => {
           const isSelf = msg.sender.id === currentUser.id;
-          const prevMsg = optimisticMessages[i - 1];
+          const prevMsg = messages[i - 1];
           const showAvatar =
             !isSelf && (!prevMsg || prevMsg.sender.id !== msg.sender.id);
 
@@ -162,7 +160,7 @@ export function ChatRoom({
                 <div className="w-7 h-7 flex-shrink-0">
                   {showAvatar && (
                     <Avatar className="w-7 h-7">
-                      <AvatarImage src={msg.sender.image ?? undefined} />
+                      <AvatarImage src={(imageOverrides?.[msg.sender.id] ?? msg.sender.image) ?? undefined} />
                       <AvatarFallback className="bg-forest-100 text-forest-500 text-xs font-bold">
                         {getInitials(msg.sender.name ?? "P")}
                       </AvatarFallback>
@@ -174,7 +172,7 @@ export function ChatRoom({
               )}
 
               <div
-                className={cn("max-w-[72%] space-y-1", isSelf && "items-end")}
+                className={cn("max-w-[85%] sm:max-w-[72%] space-y-1", isSelf && "items-end")}
               >
                 <div
                   className={cn(
@@ -205,7 +203,9 @@ export function ChatRoom({
       {/* Input area */}
       {isClosed ? (
         <div className="p-4 border-t border-sand-200 text-center text-sm text-sand-400 bg-sand-50">
-          Konsultasi ini telah {consultationStatus === "COMPLETED" ? "selesai" : "dibatalkan"}.
+          {consultationStatus === "COMPLETED"
+            ? "Sesi konsultasi telah berakhir. Chat tidak dapat dilanjutkan."
+            : "Konsultasi ini telah dibatalkan."}
         </div>
       ) : (
         <div className="p-3 border-t border-sand-200 bg-white">
@@ -221,10 +221,10 @@ export function ChatRoom({
             />
             <Button
               onClick={sendMessage}
-              disabled={!input.trim() || isPending}
+              disabled={!input.trim() || isSending}
               className="bg-forest-500 hover:bg-forest-600 text-white h-11 w-11 p-0 flex-shrink-0 rounded-xl"
             >
-              {isPending ? (
+              {isSending ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
                 <Send className="w-4 h-4" />

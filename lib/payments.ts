@@ -64,7 +64,7 @@ export async function createConsultationTransaction(
       },
     ],
     callbacks: {
-      finish: `${APP_URL}/konsultasi/${params.consultationId}?status=success`,
+      finish: `${APP_URL}/konsultasi/${params.consultationId}?status=success&order_id=${params.orderId}`,
       error: `${APP_URL}/konsultasi/${params.consultationId}?status=error`,
       pending: `${APP_URL}/konsultasi/${params.consultationId}?status=pending`,
     },
@@ -118,7 +118,7 @@ export async function createPremiumTransaction(
       },
     ],
     callbacks: {
-      finish: `${APP_URL}/profil?tab=premium&status=success`,
+      finish: `${APP_URL}/profil?tab=premium&status=success&order_id=${params.orderId}`,
       error: `${APP_URL}/profil?tab=premium&status=error`,
     },
     notification_url: `${APP_URL}/api/payments/webhook`,

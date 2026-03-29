@@ -95,7 +95,7 @@ export default async function AdminPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h1 className="text-2xl font-serif font-bold text-forest-500">
+        <h1 className="text-xl sm:text-2xl font-serif font-bold text-forest-500">
           Panel Admin
         </h1>
         <p className="text-sand-500 text-sm mt-1">
@@ -136,15 +136,15 @@ export default async function AdminPage() {
           {recentUsers.map((user) => (
             <div
               key={user.id}
-              className="px-5 py-3 flex items-center justify-between"
+              className="px-5 py-3 flex flex-wrap items-start sm:items-center justify-between gap-2"
             >
-              <div>
-                <div className="text-sm font-medium text-forest-500">
+              <div className="min-w-0">
+                <div className="text-sm font-medium text-forest-500 truncate">
                   {user.name ?? "-"}
                 </div>
-                <div className="text-xs text-sand-400">{user.email}</div>
+                <div className="text-xs text-sand-400 truncate">{user.email}</div>
               </div>
-              <div className="flex items-center gap-2 text-xs">
+              <div className="flex items-center gap-2 text-xs flex-shrink-0">
                 <span
                   className={`px-2 py-0.5 rounded-full border ${
                     user.role === "EXPERT"
@@ -161,7 +161,7 @@ export default async function AdminPage() {
                     Premium
                   </span>
                 )}
-                <span className="text-sand-400">
+                <span className="text-sand-400 hidden sm:inline">
                   {formatDate(user.createdAt)}
                 </span>
               </div>

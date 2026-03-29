@@ -64,9 +64,9 @@ export default async function KonsultasiPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       <ConsultationRefresher />
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-serif font-bold text-forest-500">
+          <h1 className="text-xl sm:text-2xl font-serif font-bold text-forest-500">
             {isExpert ? "Jadwal Konsultasi" : "Konsultasi Saya"}
           </h1>
           <p className="text-sand-500 text-sm mt-1">
@@ -76,7 +76,7 @@ export default async function KonsultasiPage() {
           </p>
         </div>
         {!isExpert && (
-          <Button asChild className="bg-forest-500 hover:bg-forest-600 text-white">
+          <Button asChild className="bg-forest-500 hover:bg-forest-600 text-white flex-shrink-0">
             <Link href="/cari-pakar">
               <MessageCircle className="w-4 h-4 mr-2" />
               Konsultasi Baru
