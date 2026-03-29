@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 const MIDTRANS_SERVER_KEY = process.env.MIDTRANS_SERVER_KEY!;
 const MIDTRANS_CLIENT_KEY = process.env.MIDTRANS_CLIENT_KEY!;
 const IS_SANDBOX = process.env.MIDTRANS_IS_SANDBOX === "true" || MIDTRANS_SERVER_KEY?.startsWith("SB-");
+const APP_URL = process.env.NEXTAUTH_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
 const SNAP_BASE_URL = IS_SANDBOX
   ? "https://app.sandbox.midtrans.com/snap/v1"
@@ -63,10 +64,11 @@ export async function createConsultationTransaction(
       },
     ],
     callbacks: {
-      finish: `${process.env.NEXTAUTH_URL}/konsultasi/${params.consultationId}?status=success`,
-      error: `${process.env.NEXTAUTH_URL}/konsultasi/${params.consultationId}?status=error`,
-      pending: `${process.env.NEXTAUTH_URL}/konsultasi/${params.consultationId}?status=pending`,
+      finish: `${APP_URL}/konsultasi/${params.consultationId}?status=success`,
+      error: `${APP_URL}/konsultasi/${params.consultationId}?status=error`,
+      pending: `${APP_URL}/konsultasi/${params.consultationId}?status=pending`,
     },
+    notification_url: `${APP_URL}/api/payments/webhook`,
     expiry: {
       unit: "hour",
       duration: 24,
@@ -116,9 +118,10 @@ export async function createPremiumTransaction(
       },
     ],
     callbacks: {
-      finish: `${process.env.NEXTAUTH_URL}/profil?tab=premium&status=success`,
-      error: `${process.env.NEXTAUTH_URL}/profil?tab=premium&status=error`,
+      finish: `${APP_URL}/profil?tab=premium&status=success`,
+      error: `${APP_URL}/profil?tab=premium&status=error`,
     },
+    notification_url: `${APP_URL}/api/payments/webhook`,
     expiry: {
       unit: "hour",
       duration: 2,
