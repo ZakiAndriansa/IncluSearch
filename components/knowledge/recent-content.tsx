@@ -1,8 +1,9 @@
 import Link from "next/link";
 import Image from "next/image";
-import { BookOpen, Video, FileText, Lock } from "lucide-react";
+import { BookOpen, Video, FileText, Lock, LockOpen } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Badge } from "@/components/ui/badge";
+import { LockedContentLink } from "@/components/knowledge/locked-content-link";
 import { CATEGORY_LABELS } from "@/lib/utils";
 
 interface RecentContentProps {
@@ -57,12 +58,8 @@ export async function RecentContent({ isPremium, limit = 3 }: RecentContentProps
         const Icon = TYPE_ICON[content.type];
         const locked = content.isPremium && !isPremium;
 
-        return (
-          <Link
-            key={content.id}
-            href={locked ? "/profil?tab=premium" : `/knowledge-hub/${content.slug}`}
-            className="flex items-start gap-3 p-3 rounded-xl border border-sand-200 bg-white hover:border-teal-dark/30 hover:shadow-sm transition-all group"
-          >
+        const inner = (
+          <>
             {/* Thumbnail */}
             <div className="w-14 h-14 rounded-lg bg-sand-100 flex-shrink-0 overflow-hidden relative">
               {content.thumbnailUrl ? (
@@ -93,9 +90,15 @@ export async function RecentContent({ isPremium, limit = 3 }: RecentContentProps
                   {TYPE_LABEL[content.type]}
                 </Badge>
                 {content.isPremium && (
-                  <Badge className="text-[10px] h-4 px-1.5 bg-amber-100 text-amber-600 border-amber-200">
-                    Premium
-                  </Badge>
+                  locked ? (
+                    <span className="flex items-center justify-center w-4 h-4 bg-amber-50 border border-amber-200 text-amber-500 rounded-full transition-all hover:bg-amber-100 hover:border-amber-400 hover:scale-110">
+                      <Lock className="w-2.5 h-2.5" />
+                    </span>
+                  ) : (
+                    <span className="flex items-center justify-center w-4 h-4 bg-amber-50 border border-amber-200 text-amber-500 rounded-full transition-all hover:bg-amber-100 hover:border-amber-400 hover:scale-110">
+                      <LockOpen className="w-2.5 h-2.5" />
+                    </span>
+                  )
                 )}
               </div>
               <h4 className="text-sm font-medium text-forest-500 leading-tight line-clamp-2 group-hover:text-teal-dark transition-colors">
@@ -106,6 +109,20 @@ export async function RecentContent({ isPremium, limit = 3 }: RecentContentProps
                 {content.readTimeMins && ` · ${content.readTimeMins} mnt`}
               </p>
             </div>
+          </>
+        );
+
+        return locked ? (
+          <LockedContentLink key={content.id} title={content.title}>
+            {inner}
+          </LockedContentLink>
+        ) : (
+          <Link
+            key={content.id}
+            href={`/knowledge-hub/${content.slug}`}
+            className="flex items-start gap-3 p-3 rounded-xl border border-sand-200 bg-white hover:border-teal-dark/30 hover:shadow-sm transition-all group"
+          >
+            {inner}
           </Link>
         );
       })}

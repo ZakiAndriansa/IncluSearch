@@ -1,15 +1,16 @@
 import { Suspense } from "react";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { HeroSection } from "@/components/shared/hero-section";
 import { FeaturedExperts } from "@/components/experts/featured-experts";
-import { QuickStats } from "@/components/shared/quick-stats";
 import { RecentContent } from "@/components/knowledge/recent-content";
-import { AssessmentCTA } from "@/components/assessment/assessment-cta";
-import { QuotaStatusCard } from "@/components/consultation/quota-status-card";
 import { ExpertCardSkeleton } from "@/components/experts/expert-card-skeleton";
+import { checkConsultationQuota } from "@/lib/quota-checker";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
-import { CalendarDays, Star, Users, MessageCircle, BookOpen, ArrowRight, Clock } from "lucide-react";
+import {
+  CalendarDays, Star, Users, MessageCircle,
+  ArrowRight, Clock, ClipboardList, CheckCircle2,
+  Crown, AlertCircle,
+} from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import type { Metadata } from "next";
@@ -22,116 +23,141 @@ export const metadata: Metadata = { title: "Dashboard" };
 async function ParentDashboard({ userId, isPremium }: { userId: string; isPremium: boolean }) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const in7days = new Date(today);
-  in7days.setDate(in7days.getDate() + 7);
+  const tomorrow = new Date(today.getTime() + 86400000);
 
-  const [expertCount, contentCount, communityCount, userAssessment, upcomingConsultations] = await Promise.all([
-    prisma.expertProfile.count({ where: { isVerified: true, isAvailable: true } }),
-    prisma.knowledgeContent.count({ where: { publishedAt: { not: null } } }),
-    prisma.community.count({ where: { isActive: true } }),
+  const [userAssessment, nextConsultation, quota] = await Promise.all([
     prisma.assessment.findFirst({
       where: { userId, isActive: true },
       orderBy: { createdAt: "desc" },
     }),
-    prisma.consultation.findMany({
+    prisma.consultation.findFirst({
       where: {
         parentId: userId,
-        scheduledAt: { gte: today, lt: in7days },
+        scheduledAt: { gte: today },
         status: { in: ["SCHEDULED", "IN_PROGRESS"] },
       },
       select: {
         id: true,
         scheduledAt: true,
         durationMins: true,
+        status: true,
         expert: { include: { user: { select: { name: true } } } },
       },
       orderBy: { scheduledAt: "asc" },
-      take: 3,
     }),
+    checkConsultationQuota(userId),
   ]);
 
+  const isToday = nextConsultation
+    ? nextConsultation.scheduledAt >= today && nextConsultation.scheduledAt < tomorrow
+    : false;
+
   return (
-    <div className="space-y-8">
-      <QuickStats expertCount={expertCount} contentCount={contentCount} communityCount={communityCount} />
+    <div className="space-y-6">
 
-      {/* Upcoming consultations */}
-      {upcomingConsultations.length > 0 && (
-        <section>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-xl font-serif font-semibold text-forest-500">Konsultasi Mendatang</h2>
-            <Link href="/konsultasi" className="text-sm text-teal-dark hover:text-olive-500 font-medium transition-colors">
-              Lihat semua →
-            </Link>
-          </div>
-          <div className="space-y-2">
-            {upcomingConsultations.map((c) => {
-              const isToday = c.scheduledAt >= today && c.scheduledAt < new Date(today.getTime() + 86400000);
-              return (
-                <Link
-                  key={c.id}
-                  href={`/konsultasi/${c.id}`}
-                  className="flex items-center gap-4 bg-white border border-sand-200 hover:border-teal-dark/30 hover:shadow-sm transition-all rounded-2xl p-4"
-                >
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${isToday ? "bg-forest-500" : "bg-forest-50"}`}>
-                    <CalendarDays className={`w-5 h-5 ${isToday ? "text-white" : "text-forest-500"}`} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-forest-500 text-sm">
-                      {c.expert.user.name}
-                    </div>
-                    <div className="text-xs text-sand-400 mt-0.5">
-                      {formatDateTime(c.scheduledAt)} · {c.durationMins} menit
-                    </div>
-                  </div>
-                  {isToday && (
-                    <span className="text-xs bg-forest-500 text-white px-2.5 py-1 rounded-full font-medium flex-shrink-0">
-                      Hari ini
-                    </span>
-                  )}
-                  <ArrowRight className="w-4 h-4 text-sand-300 flex-shrink-0" />
-                </Link>
-              );
-            })}
-          </div>
-        </section>
-      )}
+      {/* ── Compact status strip ── */}
+      <div className="flex flex-wrap gap-2">
 
-      <div className="grid sm:grid-cols-2 gap-4">
-        <AssessmentCTA
-          hasAssessment={!!userAssessment}
-          assessmentId={userAssessment?.id}
-          childName={userAssessment?.childName}
-        />
-        <QuotaStatusCard userId={userId} isPremium={isPremium} />
+        {/* Assessment status */}
+        {userAssessment ? (
+          <Link
+            href="/profil?tab=asesmen"
+            className="flex items-center gap-1.5 text-xs bg-forest-50 border border-forest-100 text-forest-600 rounded-full px-3 py-1.5 hover:bg-forest-100 transition-colors"
+          >
+            <CheckCircle2 className="w-3.5 h-3.5 text-forest-500" />
+            Asesmen: <span className="font-semibold">{userAssessment.childName}</span>
+          </Link>
+        ) : (
+          <Link
+            href="/profil?tab=asesmen"
+            className="flex items-center gap-1.5 text-xs bg-teal-dark/5 border border-teal-dark/20 text-teal-dark rounded-full px-3 py-1.5 hover:bg-teal-dark/10 transition-colors"
+          >
+            <ClipboardList className="w-3.5 h-3.5" />
+            Buat asesmen untuk rekomendasi pakar
+          </Link>
+        )}
+
+        {/* Quota / premium status */}
+        {isPremium ? (
+          <span className="flex items-center gap-1.5 text-xs bg-amber-50 border border-amber-200 text-amber-600 rounded-full px-3 py-1.5 font-medium">
+            <Crown className="w-3.5 h-3.5 text-amber-500" />
+            Bebas konsultasi
+          </span>
+        ) : quota.allowed ? (
+          <Link
+            href="/cari-pakar"
+            className="flex items-center gap-1.5 text-xs bg-forest-50 border border-forest-100 text-forest-600 rounded-full px-3 py-1.5 hover:bg-forest-100 transition-colors"
+          >
+            <CheckCircle2 className="w-3.5 h-3.5 text-forest-500" />
+            Bisa konsultasi 1 kali
+          </Link>
+        ) : (
+          <Link
+            href="/profil?tab=premium"
+            className="flex items-center gap-1.5 text-xs bg-sand-100 border border-sand-200 text-sand-600 rounded-full px-3 py-1.5 hover:bg-sand-200 transition-colors"
+          >
+            <AlertCircle className="w-3.5 h-3.5" />
+            Bisa konsultasi dalam {quota.daysUntilReset ?? "?"} hari
+          </Link>
+        )}
+
+        {/* Next consultation */}
+        {nextConsultation && (
+          <Link
+            href={`/konsultasi/${nextConsultation.id}`}
+            className="flex items-center gap-1.5 text-xs bg-blue-50 border border-blue-100 text-blue-700 rounded-full px-3 py-1.5 hover:bg-blue-100 transition-colors"
+          >
+            <CalendarDays className="w-3.5 h-3.5" />
+            {isToday ? "Hari ini" : formatDateTime(nextConsultation.scheduledAt).split(",")[0]}
+            {" · "}{nextConsultation.expert.user.name}
+          </Link>
+        )}
       </div>
 
+      {/* ── Expert section (main focus) ── */}
       <section>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-serif font-semibold text-forest-500">Pakar Unggulan</h2>
-          <Link href="/cari-pakar" className="text-sm text-teal-dark hover:text-olive-500 font-medium transition-colors">
+          <div>
+            <h2 className="text-xl font-serif font-semibold text-forest-500">
+              {userAssessment
+                ? `Pakar untuk ${userAssessment.childName}`
+                : "Pakar Tersedia"}
+            </h2>
+            {userAssessment && (
+              <p className="text-xs text-sand-400 mt-0.5">
+                Diurutkan berdasarkan kecocokan · hanya yang di atas 50%
+              </p>
+            )}
+          </div>
+          <Link
+            href="/cari-pakar"
+            className="text-sm text-teal-dark hover:text-olive-500 font-medium transition-colors flex-shrink-0"
+          >
             Lihat semua →
           </Link>
         </div>
         <Suspense fallback={
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid sm:grid-cols-2 gap-4">
             {Array.from({ length: 4 }).map((_, i) => <ExpertCardSkeleton key={i} />)}
           </div>
         }>
-          <FeaturedExperts isPremium={isPremium} assessmentId={userAssessment?.id} />
+          <FeaturedExperts assessmentId={userAssessment?.id} />
         </Suspense>
       </section>
 
+      {/* ── Recent content (compact) ── */}
       <section>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-serif font-semibold text-forest-500">Konten Terbaru</h2>
-          <Link href="/knowledge-hub" className="text-sm text-teal-dark hover:text-olive-500 font-medium transition-colors">
-            Knowledge Hub →
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-base font-semibold text-forest-500">Konten Terbaru</h2>
+          <Link href="/knowledge-hub" className="text-xs text-teal-dark hover:text-olive-500 font-medium transition-colors">
+            Lihat semua →
           </Link>
         </div>
-        <Suspense fallback={<div className="skeleton h-40 w-full" />}>
+        <Suspense fallback={<div className="h-24 rounded-xl bg-sand-100 animate-pulse" />}>
           <RecentContent isPremium={isPremium} limit={3} />
         </Suspense>
       </section>
+
     </div>
   );
 }
@@ -384,6 +410,15 @@ export default async function DashboardPage() {
   const session = await auth();
   if (!session) return null;
 
+  // Always read isPremium from DB — JWT can be stale after webhook updates
+  const dbUser = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { isPremium: true, premiumExpiresAt: true },
+  });
+  const isPremium =
+    dbUser?.isPremium === true &&
+    (!dbUser.premiumExpiresAt || dbUser.premiumExpiresAt > new Date());
+
   const greeting =
     session.user.role === "EXPERT"
       ? `Selamat datang, ${session.user.name?.split(" ")[0] ?? "Pakar"}`
@@ -406,7 +441,7 @@ export default async function DashboardPage() {
       </div>
 
       {session.user.role === "PARENT" && (
-        <ParentDashboard userId={session.user.id} isPremium={session.user.isPremium} />
+        <ParentDashboard userId={session.user.id} isPremium={isPremium} />
       )}
       {session.user.role === "EXPERT" && (
         <ExpertDashboard userId={session.user.id} />

@@ -34,12 +34,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: limit.message }, { status: 403 });
     }
 
-    const assessment = await prisma.assessment.create({
-      data: {
-        userId: session.user.id,
-        ...data,
-        isActive: true,
-      },
+    // Atomically deactivate all existing + create new active one
+    const assessment = await prisma.$transaction(async (tx) => {
+      await tx.assessment.updateMany({
+        where: { userId: session.user.id, isActive: true },
+        data: { isActive: false },
+      });
+      return tx.assessment.create({
+        data: { userId: session.user.id, ...data, isActive: true },
+      });
     });
 
     return NextResponse.json({ assessment }, { status: 201 });

@@ -9,7 +9,7 @@ export const metadata: Metadata = { title: "Profil Saya" };
 export default async function ProfilPage({
   searchParams,
 }: {
-  searchParams: { tab?: string };
+  searchParams: { tab?: string; status?: string };
 }) {
   const session = await auth();
   if (!session) redirect("/login");
@@ -31,8 +31,8 @@ export default async function ProfilPage({
       },
     }),
     prisma.assessment.findMany({
-      where: { userId: session.user.id, isActive: true },
-      orderBy: { createdAt: "desc" },
+      where: { userId: session.user.id },
+      orderBy: [{ isActive: "desc" }, { createdAt: "desc" }],
     }),
     prisma.consultationQuota.findUnique({
       where: { userId: session.user.id },
@@ -57,6 +57,7 @@ export default async function ProfilPage({
         assessments={assessments}
         quota={quota}
         activeTab={searchParams.tab ?? "profil"}
+        paymentStatus={searchParams.status}
       />
     </div>
   );

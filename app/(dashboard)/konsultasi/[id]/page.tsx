@@ -6,6 +6,8 @@ import { ChatRoom } from "@/components/consultation/chat-room";
 import { ConsultationHeader } from "@/components/consultation/consultation-header";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { ClipboardList } from "lucide-react";
+import { CHALLENGE_TYPE_LABELS } from "@/lib/utils";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Ruang Konsultasi" };
@@ -47,6 +49,20 @@ export default async function ConsultationRoomPage({
   });
 
   if (!consultation) notFound();
+
+  // Fetch asesmen aktif orang tua
+  const parentAssessment = await prisma.assessment.findFirst({
+    where: { userId: consultation.parentId, isActive: true },
+    select: {
+      childName: true,
+      childAge: true,
+      challengeType: true,
+      challengeDetails: true,
+      learningEnv: true,
+      goals: true,
+      locationPref: true,
+    },
+  });
 
   // Parents must have at least one active assessment to access chat
   const isParent = consultation.parentId === session.user.id;
@@ -145,6 +161,23 @@ export default async function ConsultationRoomPage({
   return (
     <div className="h-[calc(100vh-8rem)] flex flex-col max-w-3xl mx-auto">
       <ConsultationHeader consultation={consultation} currentUserId={session.user.id} />
+      {!isParent && parentAssessment && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-start gap-3 text-sm">
+          <ClipboardList className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+          <div className="space-y-1 min-w-0">
+            <div className="font-semibold text-amber-700">
+              Asesmen: {parentAssessment.childName}, {parentAssessment.childAge} tahun
+            </div>
+            <div className="text-amber-600 text-xs">
+              {CHALLENGE_TYPE_LABELS[parentAssessment.challengeType] ?? parentAssessment.challengeType}
+              {parentAssessment.goals.length > 0 && ` · Tujuan: ${parentAssessment.goals.slice(0, 3).join(", ")}`}
+            </div>
+            {parentAssessment.challengeDetails && (
+              <div className="text-amber-600 text-xs line-clamp-2">{parentAssessment.challengeDetails}</div>
+            )}
+          </div>
+        </div>
+      )}
       <ChatRoom
         roomId={consultation.chatRoom.id}
         initialMessages={consultation.chatRoom.messages}

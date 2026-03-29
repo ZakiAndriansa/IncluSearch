@@ -12,9 +12,6 @@ export const metadata: Metadata = {
   description: "Artikel, video, dan modul edukasi tentang Anak Berkebutuhan Khusus",
 };
 
-// ISR: revalidate every 10 minutes
-export const revalidate = 600;
-
 interface SearchParams {
   category?: string;
   type?: string;
@@ -31,6 +28,15 @@ export default async function KnowledgeHubPage({
 }) {
   const session = await auth();
   if (!session) return null;
+
+  // Always read isPremium from DB — JWT can be stale after webhook updates
+  const dbUser = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { isPremium: true, premiumExpiresAt: true },
+  });
+  const isPremium =
+    dbUser?.isPremium === true &&
+    (!dbUser.premiumExpiresAt || dbUser.premiumExpiresAt > new Date());
 
   const page = parseInt(searchParams.page ?? "1");
   const perPage = 12;
@@ -83,7 +89,7 @@ export default async function KnowledgeHubPage({
       </div>
 
       {/* Premium banner for free users */}
-      {!session.user.isPremium && premiumCount > 0 && (
+      {!isPremium && premiumCount > 0 && (
         <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-amber-500 to-amber-600 p-5 text-white">
           <div className="absolute inset-0 opacity-10">
             <div className="absolute top-0 right-0 w-48 h-48 rounded-full bg-white blur-2xl" />
@@ -121,7 +127,7 @@ export default async function KnowledgeHubPage({
         total={total}
         page={page}
         perPage={perPage}
-        isPremium={session.user.isPremium}
+        isPremium={isPremium}
       />
     </div>
   );

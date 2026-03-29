@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import Image from "next/image";
 import {
   User,
@@ -21,6 +22,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
+import Link from "next/link";
 import {
   getInitials,
   formatDate,
@@ -80,6 +82,7 @@ interface ProfileTabsProps {
   assessments: Assessment[];
   quota: ConsultationQuota | null;
   activeTab: string;
+  paymentStatus?: string;
 }
 
 export function ProfileTabs({
@@ -87,8 +90,10 @@ export function ProfileTabs({
   assessments,
   quota,
   activeTab: initialTab,
+  paymentStatus,
 }: ProfileTabsProps) {
   const router = useRouter();
+  const { update: updateSession } = useSession();
   const { toast } = useToast();
   const [tab, setTab] = useState(initialTab);
   const [showAssessmentForm, setShowAssessmentForm] = useState(false);
@@ -98,6 +103,27 @@ export function ProfileTabs({
     bio: user.bio ?? "",
   });
   const [isSaving, setIsSaving] = useState(false);
+  const [isUpgrading, setIsUpgrading] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (paymentStatus === "success") {
+      toast({
+        title: "Pembayaran berhasil!",
+        description: "Akun Anda telah diupgrade ke Premium. Selamat menikmati semua fitur.",
+      });
+      router.replace("/profil?tab=premium", { scroll: false });
+      // Sync JWT token with DB so other components reflect the new premium status
+      updateSession().then(() => router.refresh());
+    } else if (paymentStatus === "error") {
+      toast({
+        title: "Pembayaran gagal",
+        description: "Terjadi kesalahan saat memproses pembayaran. Silakan coba lagi.",
+        variant: "destructive",
+      });
+      router.replace("/profil?tab=premium", { scroll: false });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function switchTab(id: string) {
     setTab(id);
@@ -133,7 +159,19 @@ export function ProfileTabs({
     }
   }
 
+  async function activateAssessment(id: string) {
+    try {
+      const res = await fetch(`/api/assessments/${id}/activate`, { method: "POST" });
+      if (!res.ok) throw new Error();
+      toast({ title: "Asesmen diaktifkan" });
+      router.refresh();
+    } catch {
+      toast({ title: "Gagal mengaktifkan asesmen", variant: "destructive" });
+    }
+  }
+
   async function upgradePremium(planId: string) {
+    setIsUpgrading(planId);
     try {
       const res = await fetch("/api/payments/premium", {
         method: "POST",
@@ -150,6 +188,7 @@ export function ProfileTabs({
         throw new Error("URL pembayaran tidak ditemukan");
       }
     } catch (err) {
+      setIsUpgrading(null);
       toast({
         title: "Gagal memproses pembayaran",
         description: err instanceof Error ? err.message : undefined,
@@ -158,7 +197,7 @@ export function ProfileTabs({
     }
   }
 
-  const maxAssessments = user.isPremium ? 3 : 1;
+  const maxAssessments = 1;
 
   return (
     <div className="bg-white rounded-2xl border border-sand-200 overflow-hidden">
@@ -277,10 +316,10 @@ export function ProfileTabs({
                   Asesmen Kebutuhan Anak
                 </h3>
                 <p className="text-sm text-sand-500 mt-0.5">
-                  {assessments.length}/{maxAssessments} asesmen aktif
+                  {assessments.filter((a) => a.isActive).length} aktif · {assessments.length} total
                 </p>
               </div>
-              {assessments.length < maxAssessments && !showAssessmentForm && (
+              {!showAssessmentForm && (
                 <Button
                   size="sm"
                   onClick={() => setShowAssessmentForm(true)}
@@ -324,18 +363,30 @@ export function ProfileTabs({
             {assessments.map((a) => (
               <div
                 key={a.id}
-                className="rounded-xl border border-forest-100 bg-forest-50 p-4"
+                className={`rounded-xl border p-4 ${
+                  a.isActive
+                    ? "border-forest-100 bg-forest-50"
+                    : "border-sand-200 bg-white"
+                }`}
               >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-forest-500" />
-                      <span className="font-semibold text-forest-500 text-sm">
+                <div className="flex items-start justify-between gap-3">
+                  <Link href={`/profil/asesmen/${a.id}`} className="flex-1 min-w-0 group">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <CheckCircle2
+                        className={`w-4 h-4 flex-shrink-0 ${a.isActive ? "text-forest-500" : "text-sand-300"}`}
+                      />
+                      <span className={`font-semibold text-sm group-hover:underline underline-offset-2 ${a.isActive ? "text-forest-500" : "text-sand-600"}`}>
                         {a.childName}
                       </span>
-                      <Badge className="text-[10px] bg-forest-100 text-forest-500 border-forest-200">
-                        Aktif
-                      </Badge>
+                      {a.isActive ? (
+                        <Badge className="text-[10px] bg-forest-100 text-forest-500 border-forest-200">
+                          Aktif
+                        </Badge>
+                      ) : (
+                        <Badge className="text-[10px] bg-sand-100 text-sand-500 border-sand-200">
+                          Nonaktif
+                        </Badge>
+                      )}
                     </div>
                     <div className="mt-1.5 space-y-1">
                       <p className="text-xs text-sand-500">
@@ -349,33 +400,28 @@ export function ProfileTabs({
                         </p>
                       )}
                     </div>
+                  </Link>
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    {!a.isActive && (
+                      <button
+                        onClick={() => activateAssessment(a.id)}
+                        className="text-xs text-forest-500 hover:text-forest-600 font-medium border border-forest-200 hover:border-forest-400 rounded-lg px-2.5 py-1 transition-colors"
+                      >
+                        Aktifkan
+                      </button>
+                    )}
+                    <button
+                      onClick={() => deleteAssessment(a.id)}
+                      className="text-sand-400 hover:text-red-500 transition-colors tap-target p-1"
+                      title="Hapus asesmen"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
-                  <button
-                    onClick={() => deleteAssessment(a.id)}
-                    className="text-sand-400 hover:text-red-500 transition-colors tap-target p-1"
-                    title="Hapus asesmen"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
                 </div>
               </div>
             ))}
 
-            {!user.isPremium && (
-              <div className="rounded-xl border border-dashed border-amber-200 bg-amber-50 p-4 text-center">
-                <p className="text-sm text-amber-700 mb-2">
-                  Upgrade Premium untuk mengelola hingga 3 asesmen aktif
-                </p>
-                <Button
-                  size="sm"
-                  onClick={() => switchTab("premium")}
-                  className="bg-amber-500 hover:bg-amber-600 text-white text-xs"
-                >
-                  <Crown className="w-3.5 h-3.5 mr-1.5" />
-                  Lihat Paket Premium
-                </Button>
-              </div>
-            )}
           </div>
         )}
 
@@ -469,9 +515,10 @@ export function ProfileTabs({
 
                       <Button
                         onClick={() => upgradePremium(plan.id)}
-                        className="w-full bg-amber-500 hover:bg-amber-600 text-white"
+                        disabled={isUpgrading !== null}
+                        className="w-full bg-amber-500 hover:bg-amber-600 text-white disabled:opacity-60"
                       >
-                        Pilih Paket {plan.name}
+                        {isUpgrading === plan.id ? "Memproses..." : `Pilih Paket ${plan.name}`}
                       </Button>
                     </div>
                   ))}

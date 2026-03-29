@@ -202,9 +202,10 @@ export async function handleMidtransWebhook(payload: {
       });
 
       if (payment.type === "CONSULTATION" && payment.consultationId) {
-        await tx.consultation.update({
+        const consultation = await tx.consultation.update({
           where: { id: payment.consultationId },
           data: { status: "SCHEDULED", paidAt: new Date() },
+          select: { scheduledAt: true },
         });
 
         // Create chat room for the consultation
@@ -214,9 +215,9 @@ export async function handleMidtransWebhook(payload: {
           data: { chatRoomId: chatRoom.id },
         });
 
-        // Record quota usage for free users
+        // Record quota usage — anchor 20-day window from scheduled date
         const { recordConsultation } = await import("@/lib/quota-checker");
-        await recordConsultation(payment.userId);
+        await recordConsultation(payment.userId, consultation.scheduledAt);
       }
 
       if (payment.type === "PREMIUM_SUBSCRIPTION") {

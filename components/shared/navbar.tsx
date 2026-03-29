@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Bell, Crown, Menu } from "lucide-react";
+import { Bell, Crown, User, ClipboardList, ShieldCheck, LogOut } from "lucide-react";
+
 import { signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import {
@@ -33,22 +34,24 @@ export function Navbar({ user }: NavbarProps) {
     <header className="sticky top-0 z-40 w-full border-b border-sand-200 bg-white/90 backdrop-blur-md h-16 hidden lg:flex">
       <div className="flex items-center justify-between w-full px-6">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-forest-500 flex items-center justify-center">
-            <span className="text-white font-bold font-serif text-lg">O</span>
-          </div>
-          <span className="font-semibold text-forest-500 text-lg hidden xl:block">
-            IncluSearch
-          </span>
+        <Link href="/" className="flex items-center">
+          <Image
+            src="/logo.png"
+            alt="IncluSearch"
+            width={140}
+            height={48}
+            className="h-14 w-auto object-contain scale-125 origin-left"
+            priority
+          />
         </Link>
 
         {/* Right actions */}
         <div className="flex items-center gap-3">
           {/* Premium badge */}
           {user.isPremium && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 border border-amber-200">
-              <Crown className="w-3.5 h-3.5 text-amber-500" />
-              <span className="text-xs font-semibold text-amber-600">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-amber-400 to-yellow-300 border border-amber-300 shadow-sm">
+              <Crown className="w-3.5 h-3.5 text-amber-900" />
+              <span className="text-xs font-medium text-amber-900">
                 Premium
               </span>
             </div>
@@ -71,51 +74,78 @@ export function Navbar({ user }: NavbarProps) {
                   </AvatarFallback>
                 </Avatar>
                 <div className="text-left hidden xl:block">
-                  <div className="text-sm font-medium text-forest-500 leading-none">
-                    {user.name ?? "Pengguna"}
+                  <div className="flex items-center gap-1.5 leading-none">
+                    <span className="text-sm font-medium text-forest-500">
+                      {user.name ?? "Pengguna"}
+                    </span>
+                    {user.isPremium && (
+                      <Crown className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+                    )}
                   </div>
-                  <div className="text-xs text-sand-500 mt-0.5 leading-none">
-                    {user.role === "PARENT"
-                      ? "Orang Tua / Guru"
-                      : user.role === "EXPERT"
-                      ? "Pakar"
-                      : "Admin"}
+                  <div className="text-xs mt-0.5 leading-none">
+                    {user.isPremium ? (
+                      <span className="text-amber-600 font-medium">Member Premium</span>
+                    ) : (
+                      <span className="text-sand-500">
+                        {user.role === "PARENT"
+                          ? "Orang Tua / Guru"
+                          : user.role === "EXPERT"
+                          ? "Pakar"
+                          : "Admin"}
+                      </span>
+                    )}
                   </div>
                 </div>
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-52">
               <DropdownMenuLabel className="font-normal">
-                <div className="font-semibold text-forest-500">
-                  {user.name}
+                <div className="flex items-center gap-1.5">
+                  <span className="font-semibold text-forest-500">{user.name}</span>
+                  {user.isPremium && (
+                    <Crown className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+                  )}
                 </div>
                 <div className="text-xs text-sand-500 mt-0.5">{user.email}</div>
+                {user.isPremium && (
+                  <div className="text-xs text-amber-600 font-medium mt-1">Member Premium</div>
+                )}
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                <Link href="/profil">Profil Saya</Link>
+                <Link href="/profil" className="flex items-center gap-2">
+                  <User className="w-4 h-4 text-sand-400" />
+                  Profil Saya
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/profil?tab=asesmen" className="flex items-center gap-2">
+                  <ClipboardList className="w-4 h-4 text-sand-400" />
+                  Asesmen
+                </Link>
               </DropdownMenuItem>
               {!user.isPremium && (
                 <DropdownMenuItem asChild>
-                  <Link
-                    href="/profil?tab=premium"
-                    className="text-amber-600 font-medium"
-                  >
-                    <Crown className="w-4 h-4 mr-2 text-amber-500" />
+                  <Link href="/profil?tab=premium" className="flex items-center gap-2 text-amber-600 font-medium">
+                    <Crown className="w-4 h-4 text-amber-500" />
                     Upgrade Premium
                   </Link>
                 </DropdownMenuItem>
               )}
               {user.role === "ADMIN" && (
                 <DropdownMenuItem asChild>
-                  <Link href="/admin">Panel Admin</Link>
+                  <Link href="/admin" className="flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-sand-400" />
+                    Panel Admin
+                  </Link>
                 </DropdownMenuItem>
               )}
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={() => signOut({ callbackUrl: "/login" })}
-                className="text-red-500 focus:text-red-500"
+                className="flex items-center gap-2 text-red-500 focus:text-red-500"
               >
+                <LogOut className="w-4 h-4" />
                 Keluar
               </DropdownMenuItem>
             </DropdownMenuContent>

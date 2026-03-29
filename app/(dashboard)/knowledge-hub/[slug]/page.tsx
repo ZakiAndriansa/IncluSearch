@@ -41,14 +41,22 @@ export default async function KnowledgeContentPage({
   const session = await auth();
   if (!session) redirect("/login");
 
-  const content = await prisma.knowledgeContent.findUnique({
-    where: { slug: params.slug },
-  });
+  const [content, dbUser] = await Promise.all([
+    prisma.knowledgeContent.findUnique({ where: { slug: params.slug } }),
+    prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { isPremium: true, premiumExpiresAt: true },
+    }),
+  ]);
 
   if (!content || !content.publishedAt) notFound();
 
+  const isUserPremium =
+    dbUser?.isPremium === true &&
+    (!dbUser.premiumExpiresAt || dbUser.premiumExpiresAt > new Date());
+
   // Premium gate
-  if (content.isPremium && !session.user.isPremium) {
+  if (content.isPremium && !isUserPremium) {
     return (
       <div className="max-w-2xl mx-auto">
         <Button asChild variant="ghost" size="sm" className="mb-6 text-sand-500 -ml-2">

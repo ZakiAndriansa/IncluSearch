@@ -16,13 +16,15 @@ export default function AuthLayout({
         </div>
 
         <div className="relative z-10 flex flex-col h-full p-12 justify-between">
-          <Link href="/" className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-              <span className="text-white font-bold text-lg font-serif">O</span>
-            </div>
-            <span className="text-white font-semibold text-lg">
-              IncluSearch
-            </span>
+          <Link href="/">
+            <Image
+              src="/logo.png"
+              alt="IncluSearch"
+              width={160}
+              height={56}
+              className="h-14 w-auto object-contain brightness-0 invert"
+              priority
+            />
           </Link>
 
           <div className="space-y-6">
@@ -69,13 +71,17 @@ export default function AuthLayout({
       <div className="flex items-center justify-center p-6 lg:p-12 bg-sand-50">
         <div className="w-full max-w-md">
           {/* Mobile logo */}
-          <div className="flex lg:hidden items-center justify-center gap-2 mb-8">
-            <div className="w-9 h-9 rounded-xl bg-forest-500 flex items-center justify-center">
-              <span className="text-white font-bold font-serif">O</span>
-            </div>
-            <span className="font-semibold text-forest-500 text-lg">
-              IncluSearch
-            </span>
+          <div className="flex lg:hidden items-center justify-center mb-8">
+            <Link href="/">
+              <Image
+                src="/logo.png"
+                alt="IncluSearch"
+                width={160}
+                height={56}
+                className="h-12 w-auto object-contain"
+                priority
+              />
+            </Link>
           </div>
 
           {children}

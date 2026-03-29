@@ -78,7 +78,7 @@ export default async function CariPakarPage({
           Cari Pakar Ortopedagogik
         </h1>
         <p className="text-sand-500 text-sm mt-1">
-          {total} pakar tersedia · {session.user.isPremium ? "Lihat skor kecocokan dengan asesmen Anda" : "Upgrade Premium untuk melihat skor kecocokan"}
+          {total} pakar tersedia{activeAssessment ? ` · Urutan disesuaikan dengan asesmen ${activeAssessment.childName}` : ""}
         </p>
       </div>
 
@@ -87,7 +87,6 @@ export default async function CariPakarPage({
         total={total}
         page={page}
         perPage={perPage}
-        isPremium={session.user.isPremium}
         assessment={activeAssessment}
         searchParams={searchParams}
       />

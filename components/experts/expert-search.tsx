@@ -28,7 +28,6 @@ interface ExpertSearchProps {
   total: number;
   page: number;
   perPage: number;
-  isPremium: boolean;
   assessment: Assessment | null;
   searchParams: Record<string, string | undefined>;
 }
@@ -38,7 +37,6 @@ export function ExpertSearch({
   total,
   page,
   perPage,
-  isPremium,
   assessment,
   searchParams,
 }: ExpertSearchProps) {
@@ -75,18 +73,20 @@ export function ExpertSearch({
 
   const hasFilters = searchParams.q || searchParams.spec || searchParams.location || searchParams.sortBy;
 
-  // Compute match scores client-side if premium + assessment
-  const experts: ExpertCardData[] =
-    isPremium && assessment
-      ? (() => {
-          const matches = matchExperts(assessment, initialExperts as any, initialExperts.length);
-          return matches.map((m) => ({
-            ...(m.expert as unknown as ExpertCardData),
-            matchScore: m.score,
-            matchReasons: m.reasons,
-          }));
-        })()
-      : initialExperts;
+  // Compute match scores client-side if assessment exists
+  const experts: ExpertCardData[] = assessment
+    ? (() => {
+        const matches = matchExperts(assessment, initialExperts as any, initialExperts.length);
+        return matches.map((m) => ({
+          ...(m.expert as unknown as ExpertCardData),
+          matchScore: m.score,
+          matchReasons: m.reasons,
+        }));
+      })()
+    : initialExperts;
+
+  const above50 = experts.filter((e) => (e.matchScore ?? 101) >= 50);
+  const below50 = experts.filter((e) => (e.matchScore ?? 101) < 50);
 
   return (
     <div className="space-y-5">
@@ -178,12 +178,12 @@ export function ExpertSearch({
         </div>
       </div>
 
-      {/* Premium matching info */}
-      {isPremium && assessment && (
+      {/* Matching info */}
+      {assessment && (
         <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-olive-50 border border-olive-100 text-sm text-olive-600">
           <span className="text-lg">✨</span>
           <span>
-            Urutan berdasarkan kecocokan dengan asesmen{" "}
+            Diurutkan berdasarkan kecocokan dengan asesmen{" "}
             <strong>{(assessment as any).childName}</strong>
           </span>
         </div>
@@ -205,45 +205,86 @@ export function ExpertSearch({
           <p className="text-sand-500 text-sm">
             Coba ubah filter atau kata kunci pencarian Anda.
           </p>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={clearFilters}
-            className="mt-4 border-sand-300"
-          >
+          <Button variant="outline" size="sm" onClick={clearFilters} className="mt-4 border-sand-300">
             Hapus semua filter
           </Button>
         </div>
-      ) : (
-        <>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {experts.map((expert) => (
-              <ExpertCard key={expert.id} expert={expert} isPremium={isPremium} />
-            ))}
+      ) : assessment ? (
+        /* ── Split view: above 50% / below 50% ── */
+        <div className="space-y-8">
+          {/* Section: ≥50% */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <h3 className="text-sm font-semibold text-forest-500">
+                Sangat Cocok
+              </h3>
+              <div className="flex-1 h-px bg-forest-100" />
+              <span className="text-xs text-sand-400">{above50.length} pakar</span>
+            </div>
+            {above50.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-sand-300 bg-white p-6 text-center text-sand-400 text-sm">
+                Tidak ada pakar dengan kecocokan di atas 50% untuk filter ini.
+              </div>
+            ) : (
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {above50.map((expert) => (
+                  <ExpertCard key={expert.id} expert={expert} />
+                ))}
+              </div>
+            )}
           </div>
+
+          {/* Section: <50% */}
+          {below50.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <h3 className="text-sm font-semibold text-sand-500">
+                  Kurang Cocok
+                </h3>
+                <div className="flex-1 h-px bg-sand-200" />
+                <span className="text-xs text-sand-400">{below50.length} pakar</span>
+              </div>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {below50.map((expert) => (
+                  <ExpertCard key={expert.id} expert={expert} />
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Pagination */}
           {total > perPage && (
             <div className="flex items-center justify-center gap-2 pt-2">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page <= 1}
-                onClick={() => updateFilter("page", String(page - 1))}
-                className="border-sand-300"
-              >
+              <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => updateFilter("page", String(page - 1))} className="border-sand-300">
                 Sebelumnya
               </Button>
               <span className="text-sm text-sand-500">
                 Halaman {page} dari {Math.ceil(total / perPage)}
               </span>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page >= Math.ceil(total / perPage)}
-                onClick={() => updateFilter("page", String(page + 1))}
-                className="border-sand-300"
-              >
+              <Button variant="outline" size="sm" disabled={page >= Math.ceil(total / perPage)} onClick={() => updateFilter("page", String(page + 1))} className="border-sand-300">
+                Berikutnya
+              </Button>
+            </div>
+          )}
+        </div>
+      ) : (
+        /* ── Normal view: no assessment ── */
+        <>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {experts.map((expert) => (
+              <ExpertCard key={expert.id} expert={expert} />
+            ))}
+          </div>
+
+          {total > perPage && (
+            <div className="flex items-center justify-center gap-2 pt-2">
+              <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => updateFilter("page", String(page - 1))} className="border-sand-300">
+                Sebelumnya
+              </Button>
+              <span className="text-sm text-sand-500">
+                Halaman {page} dari {Math.ceil(total / perPage)}
+              </span>
+              <Button variant="outline" size="sm" disabled={page >= Math.ceil(total / perPage)} onClick={() => updateFilter("page", String(page + 1))} className="border-sand-300">
                 Berikutnya
               </Button>
             </div>

@@ -3,17 +3,20 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import {
   FileText,
   Video,
   BookOpen,
   Lock,
+  LockOpen,
   Eye,
   Clock,
   ArrowRight,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { PremiumGateModal } from "@/components/knowledge/premium-gate-modal";
 import { CATEGORY_LABELS, formatDate } from "@/lib/utils";
 
 interface ContentItem {
@@ -54,6 +57,7 @@ const TYPE_COLOR = {
 export function ContentGrid({ contents, total, page, perPage, isPremium }: ContentGridProps) {
   const router = useRouter();
   const totalPages = Math.ceil(total / perPage);
+  const [gateModal, setGateModal] = useState<{ open: boolean; title?: string }>({ open: false });
 
   if (contents.length === 0) {
     return (
@@ -70,19 +74,24 @@ export function ContentGrid({ contents, total, page, perPage, isPremium }: Conte
   }
 
   return (
+    <>
+      <PremiumGateModal
+        open={gateModal.open}
+        onClose={() => setGateModal({ open: false })}
+        contentTitle={gateModal.title}
+      />
     <div className="space-y-6">
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {contents.map((content) => {
           const Icon = TYPE_ICON[content.type];
           const locked = content.isPremium && !isPremium;
-          const href = locked
-            ? "/profil?tab=premium"
-            : `/knowledge-hub/${content.slug}`;
+          const href = locked ? "#" : `/knowledge-hub/${content.slug}`;
 
           return (
             <Link
               key={content.id}
               href={href}
+              onClick={locked ? (e) => { e.preventDefault(); setGateModal({ open: true, title: content.title }); } : undefined}
               className="group flex flex-col bg-white rounded-2xl border border-sand-200 hover:border-teal-dark/30 hover:shadow-md transition-all overflow-hidden"
             >
               {/* Thumbnail */}
@@ -119,9 +128,15 @@ export function ContentGrid({ contents, total, page, perPage, isPremium }: Conte
                 </div>
                 {content.isPremium && (
                   <div className="absolute top-3 right-3">
-                    <Badge className="text-[10px] bg-amber-500 text-white border-transparent">
-                      Premium
-                    </Badge>
+                    {locked ? (
+                      <div className="flex items-center justify-center w-6 h-6 bg-amber-50 border border-amber-200 text-amber-500 rounded-full transition-all hover:bg-amber-100 hover:border-amber-400 hover:scale-110 cursor-pointer">
+                        <Lock className="w-3 h-3" />
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center w-6 h-6 bg-amber-50 border border-amber-200 text-amber-500 rounded-full transition-all hover:bg-amber-100 hover:border-amber-400 hover:scale-110 cursor-pointer">
+                        <LockOpen className="w-3 h-3" />
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -201,5 +216,6 @@ export function ContentGrid({ contents, total, page, perPage, isPremium }: Conte
         </div>
       )}
     </div>
+    </>
   );
 }

@@ -15,7 +15,7 @@ import {
   BarChart3,
   Star,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 import type { UserRole } from "@prisma/client";
 
 interface NavItem {
@@ -59,6 +59,7 @@ interface SidebarProps {
   user: {
     role: UserRole;
     isPremium: boolean;
+    premiumExpiresAt?: Date | null;
     name?: string | null;
   };
 }
@@ -110,23 +111,46 @@ export function Sidebar({ user }: SidebarProps) {
       </nav>
 
       {/* Footer CTA per role */}
-      {user.role === "PARENT" && !user.isPremium && (
+      {user.role === "PARENT" && (
         <div className="p-4 border-t border-sand-200">
-          <div className="rounded-xl bg-gradient-to-br from-amber-50 to-amber-100 border border-amber-200 p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Crown className="w-4 h-4 text-amber-500" />
-              <span className="text-sm font-semibold text-amber-700">Upgrade Premium</span>
+          {user.isPremium ? (
+            <div className="rounded-xl bg-gradient-to-br from-amber-50 to-amber-100 border border-amber-200 p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <Crown className="w-4 h-4 text-amber-500" />
+                <span className="text-sm font-semibold text-amber-700">Anggota Premium</span>
+              </div>
+              <p className="text-xs text-amber-600 leading-relaxed mb-2">
+                Anda menikmati akses penuh: konsultasi tanpa batas, konten eksklusif & hingga 3 asesmen aktif.
+              </p>
+              {user.premiumExpiresAt && (
+                <div className="flex items-center gap-1.5 pt-2 border-t border-amber-200">
+                  <CalendarDays className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+                  <span className="text-[11px] text-amber-600">
+                    Aktif hingga{" "}
+                    <span className="font-semibold">
+                      {formatDate(user.premiumExpiresAt)}
+                    </span>
+                  </span>
+                </div>
+              )}
             </div>
-            <p className="text-xs text-amber-600 mb-3 leading-relaxed">
-              Akses pakar lebih banyak, konten eksklusif & konsultasi tanpa batas.
-            </p>
-            <Link
-              href="/profil?tab=premium"
-              className="block w-full text-center text-xs font-semibold bg-amber-500 hover:bg-amber-600 text-white py-2 rounded-lg transition-colors"
-            >
-              Lihat Paket Premium
-            </Link>
-          </div>
+          ) : (
+            <div className="rounded-xl bg-gradient-to-br from-amber-50 to-amber-100 border border-amber-200 p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Crown className="w-4 h-4 text-amber-500" />
+                <span className="text-sm font-semibold text-amber-700">Upgrade Premium</span>
+              </div>
+              <p className="text-xs text-amber-600 mb-3 leading-relaxed">
+                Akses pakar lebih banyak, konten eksklusif & konsultasi tanpa batas.
+              </p>
+              <Link
+                href="/profil?tab=premium"
+                className="block w-full text-center text-xs font-semibold bg-amber-500 hover:bg-amber-600 text-white py-2 rounded-lg transition-colors"
+              >
+                Lihat Paket Premium
+              </Link>
+            </div>
+          )}
         </div>
       )}
 

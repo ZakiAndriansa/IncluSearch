@@ -69,8 +69,25 @@ export async function checkConsultationQuota(
 
   const now = new Date();
 
+  // If no quota record, fall back to checking actual paid consultations
+  let lastConsultationAt = quota?.lastConsultationAt ?? null;
+  if (!lastConsultationAt) {
+    const lastPaid = await prisma.consultation.findFirst({
+      where: {
+        parentId: userId,
+        status: { in: ["SCHEDULED", "IN_PROGRESS", "COMPLETED"] },
+        paidAt: { not: null },
+      },
+      orderBy: { scheduledAt: "desc" },
+      select: { scheduledAt: true },
+    });
+    if (lastPaid) {
+      lastConsultationAt = lastPaid.scheduledAt;
+    }
+  }
+
   // First consultation ever
-  if (!quota || !quota.lastConsultationAt) {
+  if (!lastConsultationAt) {
     return {
       allowed: true,
       isPremium: false,
@@ -82,7 +99,7 @@ export async function checkConsultationQuota(
     };
   }
 
-  const elapsed = now.getTime() - quota.lastConsultationAt.getTime();
+  const elapsed = now.getTime() - lastConsultationAt.getTime();
   const remaining = WINDOW_MS - elapsed;
 
   if (elapsed >= WINDOW_MS) {
@@ -90,7 +107,7 @@ export async function checkConsultationQuota(
     return {
       allowed: true,
       isPremium: false,
-      lastConsultationAt: quota.lastConsultationAt,
+      lastConsultationAt,
       nextAvailableAt: null,
       daysUntilReset: null,
       hoursUntilReset: null,
@@ -99,14 +116,14 @@ export async function checkConsultationQuota(
   }
 
   // Still within the 20-day window — not allowed
-  const nextAvailableAt = new Date(quota.lastConsultationAt.getTime() + WINDOW_MS);
+  const nextAvailableAt = new Date(lastConsultationAt.getTime() + WINDOW_MS);
   const daysUntilReset = Math.ceil(remaining / (24 * 60 * 60 * 1000));
   const hoursUntilReset = Math.ceil(remaining / (60 * 60 * 1000));
 
   return {
     allowed: false,
     isPremium: false,
-    lastConsultationAt: quota.lastConsultationAt,
+    lastConsultationAt,
     nextAvailableAt,
     daysUntilReset,
     hoursUntilReset,
@@ -117,8 +134,9 @@ export async function checkConsultationQuota(
 /**
  * Record a completed consultation for a free user.
  * Called after a consultation is confirmed/paid.
+ * Uses scheduledAt (the consultation date) as the anchor for the 20-day window.
  */
-export async function recordConsultation(userId: string): Promise<void> {
+export async function recordConsultation(userId: string, scheduledAt?: Date): Promise<void> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { isPremium: true, premiumExpiresAt: true },
@@ -133,18 +151,18 @@ export async function recordConsultation(userId: string): Promise<void> {
 
   if (isPremium) return;
 
-  const now = new Date();
-  const nextAvailableAt = new Date(now.getTime() + WINDOW_MS);
+  const anchor = scheduledAt ?? new Date();
+  const nextAvailableAt = new Date(anchor.getTime() + WINDOW_MS);
 
   await prisma.consultationQuota.upsert({
     where: { userId },
     create: {
       userId,
-      lastConsultationAt: now,
+      lastConsultationAt: anchor,
       nextAvailableAt,
     },
     update: {
-      lastConsultationAt: now,
+      lastConsultationAt: anchor,
       nextAvailableAt,
     },
   });
@@ -170,7 +188,8 @@ export function formatQuotaCountdown(status: QuotaStatus): string {
 
 /**
  * Check if user can create a new assessment.
- * Free: max 1 active. Premium: max 3 active.
+ * No hard limit — user can create many, but only 1 is active at a time.
+ * Creating a new one automatically deactivates the previous active one.
  */
 export async function checkAssessmentLimit(userId: string): Promise<{
   allowed: boolean;
@@ -178,38 +197,14 @@ export async function checkAssessmentLimit(userId: string): Promise<{
   maxAllowed: number;
   message: string;
 }> {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { isPremium: true, premiumExpiresAt: true },
-  });
-
-  if (!user) throw new Error("User not found");
-
-  const isPremium =
-    user.isPremium &&
-    (user.premiumExpiresAt === null || user.premiumExpiresAt > new Date());
-
-  const maxAllowed = isPremium ? 3 : 1;
-
   const currentCount = await prisma.assessment.count({
-    where: { userId, isActive: true },
+    where: { userId },
   });
-
-  if (currentCount >= maxAllowed) {
-    return {
-      allowed: false,
-      currentCount,
-      maxAllowed,
-      message: isPremium
-        ? `Maksimal ${maxAllowed} asesmen aktif untuk pengguna Premium`
-        : `Pengguna gratis hanya dapat memiliki 1 asesmen aktif. Hapus asesmen yang ada untuk membuat baru.`,
-    };
-  }
 
   return {
     allowed: true,
     currentCount,
-    maxAllowed,
+    maxAllowed: Infinity,
     message: "",
   };
 }

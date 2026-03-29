@@ -20,7 +20,7 @@ interface ExpertCardProps {
   compact?: boolean;
 }
 
-export function ExpertCard({ expert, isPremium = false, compact = false }: ExpertCardProps) {
+export function ExpertCard({ expert, compact = false }: ExpertCardProps) {
   const primarySpec = expert.specializations[0];
 
   return (
@@ -57,7 +57,7 @@ export function ExpertCard({ expert, isPremium = false, compact = false }: Exper
                   </p>
                 )}
               </div>
-              {isPremium && expert.matchScore !== undefined && (
+              {expert.matchScore !== undefined && (
                 <MatchBadge score={expert.matchScore} compact />
               )}
             </div>
