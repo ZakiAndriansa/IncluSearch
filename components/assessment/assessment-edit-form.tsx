@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
 import { CHALLENGE_TYPE_LABELS } from "@/lib/utils";
-import type { Assessment } from "@prisma/client";
+import type { Assessment, ChallengeType } from "@prisma/client";
 
 const LEARNING_ENV_LABELS: Record<string, string> = {
   HOME: "Rumah",
@@ -144,7 +144,7 @@ export function AssessmentEditForm({ assessment }: { assessment: Assessment }) {
           </Label>
           <Select
             value={form.challengeType}
-            onValueChange={(v) => setForm((f) => ({ ...f, challengeType: v }))}
+            onValueChange={(v) => setForm((f) => ({ ...f, challengeType: v as ChallengeType }))}
           >
             <SelectTrigger className="border-sand-300 focus:border-forest-500 bg-white">
               <SelectValue />
