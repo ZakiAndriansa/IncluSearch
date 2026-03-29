@@ -6,11 +6,10 @@ import {
   LayoutDashboard,
   Users,
   BookOpen,
+  MessageCircle,
   Users2,
-  User,
   CalendarDays,
   Shield,
-  Star,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { UserRole } from "@prisma/client";
@@ -24,10 +23,10 @@ interface NavItem {
 
 const PARENT_NAV: NavItem[] = [
   { href: "/", label: "Beranda", icon: LayoutDashboard, exact: true },
-  { href: "/cari-pakar", label: "Cari Pakar", icon: Users },
+  { href: "/cari-pakar", label: "Pakar", icon: Users },
+  { href: "/konsultasi", label: "Konsultasi", icon: MessageCircle },
   { href: "/knowledge-hub", label: "Ilmu", icon: BookOpen },
   { href: "/forum", label: "Forum", icon: Users2 },
-  { href: "/profil", label: "Profil", icon: User },
 ];
 
 const EXPERT_NAV: NavItem[] = [
@@ -35,14 +34,12 @@ const EXPERT_NAV: NavItem[] = [
   { href: "/konsultasi", label: "Jadwal", icon: CalendarDays },
   { href: "/knowledge-hub", label: "Ilmu", icon: BookOpen },
   { href: "/forum", label: "Forum", icon: Users2 },
-  { href: "/profil", label: "Profil", icon: Star },
 ];
 
 const ADMIN_NAV: NavItem[] = [
   { href: "/", label: "Beranda", icon: LayoutDashboard, exact: true },
   { href: "/admin", label: "Admin", icon: Shield },
   { href: "/knowledge-hub", label: "Ilmu", icon: BookOpen },
-  { href: "/profil", label: "Profil", icon: User },
 ];
 
 const NAV_BY_ROLE: Record<UserRole, NavItem[]> = {

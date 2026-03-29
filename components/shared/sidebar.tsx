@@ -8,7 +8,6 @@ import {
   BookOpen,
   MessageCircle,
   Users2,
-  User,
   Crown,
   Shield,
   CalendarDays,
@@ -31,7 +30,6 @@ const PARENT_NAV: NavItem[] = [
   { href: "/knowledge-hub", label: "Knowledge Hub", icon: BookOpen },
   { href: "/konsultasi", label: "Konsultasi Saya", icon: MessageCircle },
   { href: "/forum", label: "Forum Komunitas", icon: Users2 },
-  { href: "/profil", label: "Profil Saya", icon: User },
 ];
 
 const EXPERT_NAV: NavItem[] = [
@@ -39,14 +37,12 @@ const EXPERT_NAV: NavItem[] = [
   { href: "/konsultasi", label: "Jadwal Konsultasi", icon: CalendarDays },
   { href: "/knowledge-hub", label: "Knowledge Hub", icon: BookOpen },
   { href: "/forum", label: "Forum Komunitas", icon: Users2 },
-  { href: "/profil", label: "Profil Pakar", icon: Star },
 ];
 
 const ADMIN_NAV: NavItem[] = [
   { href: "/", label: "Beranda", icon: LayoutDashboard, exact: true },
   { href: "/admin", label: "Panel Admin", icon: Shield },
   { href: "/knowledge-hub", label: "Knowledge Hub", icon: BookOpen },
-  { href: "/profil", label: "Profil", icon: User },
 ];
 
 const NAV_BY_ROLE: Record<UserRole, NavItem[]> = {
