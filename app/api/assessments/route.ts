@@ -34,12 +34,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: limit.message }, { status: 403 });
     }
 
-    // Atomically deactivate all existing + create new active one
+    // Free users: deactivate previous, then create new
+    // Premium users: just create (can have up to 3 active)
     const assessment = await prisma.$transaction(async (tx) => {
-      await tx.assessment.updateMany({
-        where: { userId: session.user.id, isActive: true },
-        data: { isActive: false },
-      });
+      if (!limit.isPremium) {
+        await tx.assessment.updateMany({
+          where: { userId: session.user.id, isActive: true },
+          data: { isActive: false },
+        });
+      }
       return tx.assessment.create({
         data: { userId: session.user.id, ...data, isActive: true },
       });

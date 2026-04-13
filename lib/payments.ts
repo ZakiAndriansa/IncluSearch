@@ -5,7 +5,11 @@ import { prisma } from "@/lib/prisma";
 
 const MIDTRANS_SERVER_KEY = process.env.MIDTRANS_SERVER_KEY!;
 const MIDTRANS_CLIENT_KEY = process.env.MIDTRANS_CLIENT_KEY!;
-const IS_SANDBOX = process.env.MIDTRANS_IS_SANDBOX === "true" || MIDTRANS_SERVER_KEY?.startsWith("SB-");
+const IS_SANDBOX =
+  process.env.MIDTRANS_IS_SANDBOX === "true" ||
+  process.env.NEXT_PUBLIC_MIDTRANS_IS_SANDBOX === "true" ||
+  MIDTRANS_SERVER_KEY?.startsWith("SB-") ||
+  MIDTRANS_SERVER_KEY?.startsWith("Mid-server-");
 const APP_URL = process.env.NEXTAUTH_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
 const SNAP_BASE_URL = IS_SANDBOX
