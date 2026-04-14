@@ -74,6 +74,7 @@ model User {
   role              UserRole  @default(PARENT)
   isPremium         Boolean   @default(false)
   premiumExpiresAt  DateTime?
+  hasOnboarded      Boolean   @default(false)
   phone             String?
   bio               String?   @db.Text
   createdAt         DateTime  @default(now())
