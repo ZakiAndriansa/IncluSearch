@@ -92,6 +92,7 @@ model User {
   payments          Payment[]
   dailyJournals     DailyJournal[]
   actionPlans       ActionPlan[]
+  aiConversations   AIConversation[]
 
   @@index([email])
   @@index([role])
@@ -218,6 +219,7 @@ model Assessment {
   user             User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   matchScores      MatchScore[]
   actionPlans      ActionPlan[]
+  insight          AssessmentInsight?
 
   @@unique([userId])
   @@index([isActive])
@@ -599,4 +601,41 @@ model ActionPlanActivity {
   plan        ActionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
 
   @@index([planId])
+}
+
+// ─────────────────────────────────────────────
+// ASSESSMENT INSIGHT
+// ─────────────────────────────────────────────
+
+model AssessmentInsight {
+  id               String     @id @default(cuid())
+  assessmentId     String     @unique
+  summary          String     @db.Text
+  detailedAnalysis String     @db.Text
+  priorityIssues   Json
+  domainScores     Json
+  riskLevel        String
+  recommendations  Json
+  strengths        String[]
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  assessment       Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+}
+
+// ─────────────────────────────────────────────
+// AI CONVERSATIONS
+// ─────────────────────────────────────────────
+
+model AIConversation {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  messages  Json     // ChatMessage[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
