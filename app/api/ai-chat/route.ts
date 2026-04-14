@@ -63,7 +63,7 @@ export async function POST(req: Request) {
   // Rate limit: 10 prompts lifetime for free users
   let totalUserPrompts = 0;
   if (!isPremium) {
-    const allConversations = await prisma.aIConversation.findMany({
+    const allConversations = await prisma.aiConversation.findMany({
       where: { userId: session.user.id },
       select: { messages: true },
     });
@@ -88,7 +88,7 @@ export async function POST(req: Request) {
   let conversation;
   let messages: ChatMessage[] = [];
   if (conversationId) {
-    conversation = await prisma.aIConversation.findFirst({
+    conversation = await prisma.aiConversation.findFirst({
       where: { id: conversationId, userId: session.user.id },
     });
     if (conversation) {
@@ -201,16 +201,16 @@ export async function POST(req: Request) {
 
   const title = message.slice(0, 50);
   const messagesJson = messages as unknown as Parameters<
-    typeof prisma.aIConversation.create
+    typeof prisma.aiConversation.create
   >[0]["data"]["messages"];
 
   if (conversation) {
-    await prisma.aIConversation.update({
+    await prisma.aiConversation.update({
       where: { id: conversation.id },
       data: { messages: messagesJson, title: conversation.title || title },
     });
   } else {
-    conversation = await prisma.aIConversation.create({
+    conversation = await prisma.aiConversation.create({
       data: { userId: session.user.id, title, messages: messagesJson },
     });
   }
@@ -235,13 +235,13 @@ export async function GET(req: Request) {
   const conversationId = searchParams.get("id");
 
   if (conversationId) {
-    const conversation = await prisma.aIConversation.findFirst({
+    const conversation = await prisma.aiConversation.findFirst({
       where: { id: conversationId, userId: session.user.id },
     });
     return NextResponse.json({ conversation });
   }
 
-  const conversations = await prisma.aIConversation.findMany({
+  const conversations = await prisma.aiConversation.findMany({
     where: { userId: session.user.id },
     select: { id: true, title: true, createdAt: true, updatedAt: true },
     orderBy: { updatedAt: "desc" },
@@ -258,7 +258,7 @@ export async function GET(req: Request) {
 
   let promptsLeft: number | null = null;
   if (!isPremium) {
-    const allConvs = await prisma.aIConversation.findMany({
+    const allConvs = await prisma.aiConversation.findMany({
       where: { userId: session.user.id },
       select: { messages: true },
     });

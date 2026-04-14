@@ -92,7 +92,7 @@ model User {
   payments          Payment[]
   dailyJournals     DailyJournal[]
   actionPlans       ActionPlan[]
-  aiConversations   AIConversation[]
+  aiConversations   AiConversation[]
 
   @@index([email])
   @@index([role])
@@ -627,7 +627,7 @@ model AssessmentInsight {
 // AI CONVERSATIONS
 // ─────────────────────────────────────────────
 
-model AIConversation {
+model AiConversation {
   id        String   @id @default(cuid())
   userId    String
   title     String
