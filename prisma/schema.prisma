@@ -589,7 +589,7 @@ model ActionPlanActivity {
   title       String
   description String     @db.Text
   domain      PlanDomain
-  dayOfWeek   Int        // 0=Sun … 6=Sat
+  dayOfWeek   Int?       // 0=Sun … 6=Sat, null=any day
   sortOrder   Int        @default(0)
   isCompleted Boolean    @default(false)
   completedAt DateTime?
