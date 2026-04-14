@@ -185,8 +185,15 @@ export default async function ConsultationRoomPage({
     );
   }
 
+  // Check if expert has initiated the session early
+  const isExpertUser = consultation.expert.userId === session.user.id;
+  const expertInitiated = consultation.chatRoom.messages.some(
+    (m: { type: string; content: string }) =>
+      m.type === "SYSTEM" && m.content.startsWith("__EXPERT_INITIATED__")
+  );
+
   return (
-    <div className="h-[calc(100vh-8.5rem)] lg:h-[calc(100vh-7.5rem)] flex flex-col max-w-3xl mx-auto">
+    <div className="h-[calc(100vh-8.5rem)] lg:h-[calc(100vh-7.5rem)] flex flex-col max-w-3xl mx-auto relative">
       <ConsultationHeader consultation={consultation} currentUserId={session.user.id} />
       {!isParent && parentAssessment && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-start gap-3 text-sm">
@@ -218,6 +225,10 @@ export default async function ConsultationRoomPage({
           [consultation.expert.user.id]: consultation.expert.profilePhotoUrl ?? consultation.expert.user.image,
           [consultation.parent.id]: consultation.parent.image,
         }}
+        scheduledAt={consultation.scheduledAt.toISOString()}
+        durationMins={consultation.durationMins}
+        isExpert={isExpertUser}
+        expertInitiated={expertInitiated}
       />
     </div>
   );
