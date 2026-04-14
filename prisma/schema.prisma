@@ -83,7 +83,7 @@ model User {
   accounts          Account[]
   sessions          Session[]
   expertProfile     ExpertProfile?
-  assessment        Assessment?
+  assessments       Assessment[]
   consultationQuota ConsultationQuota?
   consultationsAsParent Consultation[] @relation("ParentConsultations")
   sentMessages      ChatMessage[]
@@ -199,7 +199,7 @@ enum LearningEnvironment {
 
 model Assessment {
   id               String              @id @default(cuid())
-  userId           String              @unique
+  userId           String
   childName        String
   childAge         Int
   challengeType    ChallengeType
@@ -215,9 +215,8 @@ model Assessment {
   user             User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   matchScores      MatchScore[]
 
-  @@index([userId])
+  @@unique([userId])
   @@index([isActive])
-  @@index([userId, isActive])
 }
 
 // ─────────────────────────────────────────────

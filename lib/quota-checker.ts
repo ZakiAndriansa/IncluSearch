@@ -188,23 +188,47 @@ export function formatQuotaCountdown(status: QuotaStatus): string {
 
 /**
  * Check if user can create a new assessment.
- * No hard limit — user can create many, but only 1 is active at a time.
- * Creating a new one automatically deactivates the previous active one.
+ * Free: max 1 active assessment. Premium: up to 3 active simultaneously.
  */
 export async function checkAssessmentLimit(userId: string): Promise<{
   allowed: boolean;
   currentCount: number;
   maxAllowed: number;
+  isPremium: boolean;
   message: string;
 }> {
-  const currentCount = await prisma.assessment.count({
-    where: { userId },
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { isPremium: true, premiumExpiresAt: true },
   });
+
+  const isPremium =
+    user?.isPremium === true &&
+    (!user.premiumExpiresAt || user.premiumExpiresAt > new Date());
+
+  const maxAllowed = isPremium ? 3 : 1;
+
+  const activeCount = await prisma.assessment.count({
+    where: { userId, isActive: true },
+  });
+
+  if (activeCount >= maxAllowed) {
+    return {
+      allowed: false,
+      currentCount: activeCount,
+      maxAllowed,
+      isPremium,
+      message: isPremium
+        ? `Maksimal ${maxAllowed} asesmen aktif. Nonaktifkan salah satu untuk membuat yang baru.`
+        : `Akun gratis hanya bisa punya 1 asesmen aktif. Upgrade ke Premium untuk hingga 3 asesmen aktif.`,
+    };
+  }
 
   return {
     allowed: true,
-    currentCount,
-    maxAllowed: Infinity,
+    currentCount: activeCount,
+    maxAllowed,
+    isPremium,
     message: "",
   };
 }

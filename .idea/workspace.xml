@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="d3c0d826-db5b-4a4c-a02e-6eb883a655a2" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/app/(dashboard)/action-plan/page.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/(dashboard)/ai-assistant/page.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/(dashboard)/jurnal/page.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/(dashboard)/onboarding/page.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/(dashboard)/profil/asesmen/[id]/insight/page.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/api/action-plans/[id]/complete-activity/route.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/api/action-plans/route.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/api/ai-chat/context/route.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/api/ai-chat/route.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/api/assessments/[id]/insight/route.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/api/experts/stats/route.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/api/journal/route.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/api/notifications/route.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/api/onboarding/complete/route.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/api/payments/history/route.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/api/users/profile/upload/route.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/brief.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/components/shared/notification-bell.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/components/shared/scroll-animate.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/hooks/use-scroll-animate.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/lib/action-plan-generator.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/lib/enums.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/lib/insight-engine.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/lib/notification-engine.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/lib/pdf-export.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.claude/settings.local.json" beforeDir="false" afterPath="$PROJECT_DIR$/.claude/settings.local.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(auth)/layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(auth)/layout.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(auth)/login/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(auth)/login/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(auth)/register/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(auth)/register/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(dashboard)/error.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(dashboard)/error.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(dashboard)/konsultasi/[id]/bayar/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(dashboard)/konsultasi/[id]/bayar/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(dashboard)/konsultasi/[id]/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(dashboard)/konsultasi/[id]/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(dashboard)/konsultasi/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(dashboard)/konsultasi/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(dashboard)/layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(dashboard)/layout.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(dashboard)/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(dashboard)/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/api/assessments/route.ts" beforeDir="false" afterPath="$PROJECT_DIR$/app/api/assessments/route.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/api/consultations/route.ts" beforeDir="false" afterPath="$PROJECT_DIR$/app/api/consultations/route.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/api/payments/premium/route.ts" beforeDir="false" afterPath="$PROJECT_DIR$/app/api/payments/premium/route.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/globals.css" beforeDir="false" afterPath="$PROJECT_DIR$/app/globals.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/booking/booking-form.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/booking/booking-form.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/knowledge/content-grid.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/knowledge/content-grid.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/shared/bottom-nav.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/shared/bottom-nav.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/shared/navbar.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/shared/navbar.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/shared/profile-tabs.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/shared/profile-tabs.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/shared/sidebar.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/shared/sidebar.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/payments.ts" beforeDir="false" afterPath="$PROJECT_DIR$/lib/payments.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/quota-checker.ts" beforeDir="false" afterPath="$PROJECT_DIR$/lib/quota-checker.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/middleware.ts" beforeDir="false" afterPath="$PROJECT_DIR$/middleware.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/prisma/schema.prisma" beforeDir="false" afterPath="$PROJECT_DIR$/prisma/schema.prisma" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tailwind.config.ts" beforeDir="false" afterPath="$PROJECT_DIR$/tailwind.config.ts" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="EmbeddingIndexingInfo">
+    <option name="cachedIndexableFilesCount" value="161" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="McpProjectServerCommands">
+    <commands />
+    <urls />
+  </component>
+  <component name="ProjectColorInfo"><![CDATA[{
+  "associatedIndex": 8,
+  "fromUser": false
+}]]></component>
+  <component name="ProjectId" id="3CLHogDDNTG9UKHDq58yBfbdtYr" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.MCP Project settings loaded": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "codeWithMe.voiceChat.enabledByDefault": "false",
+    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
+    "git-widget-placeholder": "Merging main",
+    "ignore.virus.scanning.warn.message": "true",
+    "js.debugger.nextJs.config.created.client": "true",
+    "js.debugger.nextJs.config.created.server": "true",
+    "junie.onboarding.icon.badge.shown": "true",
+    "last_opened_file_path": "C:/Users/zandr/Documents/IncluSearch",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "ml.llm.AcpAgentsConfigurable",
+    "to.speed.mode.migration.done": "true",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="RunManager" selected="npm.Next.js: server-side">
+    <configuration name="Next.js: debug client-side" type="JavascriptDebugType" uri="http://localhost:3000/">
+      <method v="2" />
+    </configuration>
+    <configuration name="Next.js: server-side" type="js.build_tools.npm">
+      <package-json value="$PROJECT_DIR$/package.json" />
+      <command value="run" />
+      <scripts>
+        <script value="dev" />
+      </scripts>
+      <node-interpreter value="project" />
+      <envs />
+      <method v="2" />
+    </configuration>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-js-predefined-d6986cc7102b-3bd3a6803838-JavaScript-WS-261.22158.274" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="d3c0d826-db5b-4a4c-a02e-6eb883a655a2" name="Changes" comment="" />
+      <created>1776158110369</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1776158110369</updated>
+      <workItem from="1776158110858" duration="2600000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+</project>

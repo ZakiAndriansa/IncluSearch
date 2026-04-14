@@ -107,8 +107,9 @@ export async function POST(request: Request) {
     if (err instanceof z.ZodError) {
       return NextResponse.json({ error: err.errors[0].message }, { status: 400 });
     }
-    console.error("[CONSULTATION CREATE]", err);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    console.error("[CONSULTATION CREATE] Error:", err);
+    const message = err instanceof Error ? err.message : "Server error";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 

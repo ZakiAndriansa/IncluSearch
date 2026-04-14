@@ -6,7 +6,7 @@ import { ChatRoom } from "@/components/consultation/chat-room";
 import { ConsultationHeader } from "@/components/consultation/consultation-header";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ClipboardList } from "lucide-react";
+import { ClipboardList, CalendarDays, Clock } from "lucide-react";
 import { CHALLENGE_TYPE_LABELS } from "@/lib/utils";
 import type { Metadata } from "next";
 
@@ -169,7 +169,9 @@ export default async function ConsultationRoomPage({
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
-          <div className="text-4xl mb-3">{isPaid ? "📅" : "⏳"}</div>
+          <div className="w-14 h-14 rounded-2xl bg-sand-50 border border-sand-200 flex items-center justify-center mx-auto mb-3">
+            {isPaid ? <CalendarDays className="w-7 h-7 text-forest-400" /> : <Clock className="w-7 h-7 text-amber-400" />}
+          </div>
           <h3 className="font-semibold text-forest-500 mb-2">
             {isPaid ? "Ruang Chat Belum Tersedia" : "Menunggu Konfirmasi Pembayaran"}
           </h3>

@@ -5,7 +5,7 @@ import { formatDateTime, formatCurrency } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MessageCircle, Calendar, ArrowRight, Clock } from "lucide-react";
+import { MessageCircle, Calendar, ArrowRight, Clock, CalendarDays } from "lucide-react";
 import { getInitials } from "@/lib/utils";
 import { ConsultationRefresher } from "@/components/konsultasi/consultation-refresher";
 import type { Metadata } from "next";
@@ -87,7 +87,9 @@ export default async function KonsultasiPage() {
 
       {consultations.length === 0 ? (
         <div className="rounded-2xl border border-sand-200 bg-white p-12 text-center">
-          <div className="text-5xl mb-4">{isExpert ? "📅" : "💬"}</div>
+          <div className="w-16 h-16 rounded-2xl bg-sand-50 border border-sand-200 flex items-center justify-center mx-auto mb-4">
+            {isExpert ? <CalendarDays className="w-8 h-8 text-sand-400" /> : <MessageCircle className="w-8 h-8 text-sand-400" />}
+          </div>
           <h3 className="font-serif font-semibold text-xl text-forest-500 mb-2">
             {isExpert ? "Belum ada jadwal konsultasi" : "Belum ada konsultasi"}
           </h3>
@@ -206,30 +208,8 @@ export default async function KonsultasiPage() {
                   </div>
                 )}
 
-                {!isExpert && c.status === "PENDING_PAYMENT" && !c.chatRoomId && todayConsult && c.payment && (
-                  <div className="mt-3 pt-3 border-t border-sand-100">
-                    <Button
-                      asChild
-                      size="sm"
-                      className="bg-teal-600 hover:bg-teal-700 text-white text-xs h-8"
-                    >
-                      <Link href={`/konsultasi/${c.id}`}>
-                        <MessageCircle className="w-3.5 h-3.5 mr-1.5" />
-                        Masuk ke Konsultasi
-                        <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
-                      </Link>
-                    </Button>
-                  </div>
-                )}
-
-                {!isExpert && c.status === "PENDING_PAYMENT" && !todayConsult && c.payment?.status === "PAID" && (
-                  <div className="mt-3 pt-3 border-t border-sand-100 flex items-center gap-2 text-xs text-blue-600">
-                    <Calendar className="w-3.5 h-3.5 shrink-0" />
-                    <span>Pembayaran terkonfirmasi. Ruang chat terbuka pada hari konsultasi.</span>
-                  </div>
-                )}
-
-                {!isExpert && c.status === "PENDING_PAYMENT" && !todayConsult && c.payment?.status !== "PAID" && c.payment && (
+                {/* PENDING_PAYMENT + belum bayar → tombol bayar (baik hari ini maupun bukan) */}
+                {!isExpert && c.status === "PENDING_PAYMENT" && c.payment?.status !== "PAID" && c.payment && (
                   <div className="mt-3 pt-3 border-t border-sand-100">
                     <Button
                       asChild
@@ -240,6 +220,21 @@ export default async function KonsultasiPage() {
                         Lanjutkan Pembayaran
                       </Link>
                     </Button>
+                    {todayConsult && (
+                      <p className="text-[11px] text-amber-600 mt-1.5">Konsultasi dijadwalkan hari ini — segera selesaikan pembayaran.</p>
+                    )}
+                  </div>
+                )}
+
+                {/* PENDING_PAYMENT tapi sudah bayar (waiting sync) */}
+                {!isExpert && c.status === "PENDING_PAYMENT" && c.payment?.status === "PAID" && (
+                  <div className="mt-3 pt-3 border-t border-sand-100 flex items-center gap-2 text-xs text-blue-600">
+                    <Calendar className="w-3.5 h-3.5 shrink-0" />
+                    <span>
+                      {todayConsult
+                        ? "Pembayaran terkonfirmasi. Ruang chat sedang disiapkan..."
+                        : "Pembayaran terkonfirmasi. Ruang chat terbuka pada hari konsultasi."}
+                    </span>
                   </div>
                 )}
               </div>
