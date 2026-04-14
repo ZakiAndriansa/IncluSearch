@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { checkAssessmentLimit } from "@/lib/quota-checker";
 import { z } from "zod";
+import { Prisma } from "@prisma/client";
 
 const AssessmentSchema = z.object({
   childName: z.string().min(1),
@@ -34,15 +35,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: limit.message }, { status: 403 });
     }
 
-    // Atomically deactivate all existing + create new active one
-    const assessment = await prisma.$transaction(async (tx) => {
-      await tx.assessment.updateMany({
-        where: { userId: session.user.id, isActive: true },
-        data: { isActive: false },
-      });
-      return tx.assessment.create({
-        data: { userId: session.user.id, ...data, isActive: true },
-      });
+    const assessment = await prisma.assessment.upsert({
+      where: { userId: session.user.id },
+      update: {
+        ...data,
+        isActive: true,
+        updatedAt: new Date(),
+      },
+      create: {
+        userId: session.user.id,
+        ...data,
+        isActive: true,
+      },
     });
 
     return NextResponse.json({ assessment }, { status: 201 });
@@ -50,6 +54,17 @@ export async function POST(request: Request) {
     if (err instanceof z.ZodError) {
       return NextResponse.json({ error: err.errors[0].message }, { status: 400 });
     }
+    
+    // Explicitly handle Prisma P2002 if needed, though upsert prevents it for userId
+    if (err instanceof Prisma.PrismaClientKnownRequestError) {
+      if (err.code === "P2002") {
+        return NextResponse.json(
+          { error: "Assessment for this user already exists." },
+          { status: 409 }
+        );
+      }
+    }
+
     console.error("[ASSESSMENT CREATE]", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }

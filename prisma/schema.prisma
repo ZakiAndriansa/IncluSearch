@@ -83,7 +83,7 @@ model User {
   accounts          Account[]
   sessions          Session[]
   expertProfile     ExpertProfile?
-  assessments       Assessment[]
+  assessment        Assessment?
   consultationQuota ConsultationQuota?
   consultationsAsParent Consultation[] @relation("ParentConsultations")
   sentMessages      ChatMessage[]
@@ -199,7 +199,7 @@ enum LearningEnvironment {
 
 model Assessment {
   id               String              @id @default(cuid())
-  userId           String
+  userId           String              @unique
   childName        String
   childAge         Int
   challengeType    ChallengeType
