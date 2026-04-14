@@ -39,7 +39,8 @@
       "Read(//c/IncluSearch/prisma/**)",
       "Bash(taskkill //F //IM node.exe)",
       "Bash(xargs grep:*)",
-      "Bash(grep -E \"\\\\.\\(tsx|ts\\)$\")"
+      "Bash(grep -E \"\\\\.\\(tsx|ts\\)$\")",
+      "Bash(npx dotenv:*)"
     ]
   }
 }
