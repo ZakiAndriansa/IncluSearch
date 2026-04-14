@@ -45,6 +45,10 @@ export async function POST(request: Request) {
     if (err instanceof z.ZodError) {
       return NextResponse.json({ error: err.errors[0].message }, { status: 400 });
     }
+    // Stale JWT pointing to a deleted/missing user row
+    if ((err as { code?: string }).code === "P2003") {
+      return NextResponse.json({ error: "Sesi tidak valid, silakan login ulang." }, { status: 401 });
+    }
     console.error("[ASSESSMENT CREATE]", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
