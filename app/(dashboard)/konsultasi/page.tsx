@@ -133,10 +133,19 @@ export default async function KonsultasiPage() {
               c.status === "PENDING_PAYMENT" && c.payment?.status === "PAID"
                 ? "SCHEDULED"
                 : c.status;
-            const status = STATUS_LABELS[effectiveStatus];
             const todayConsult = isToday(c.scheduledAt);
             const { start: startTime, end: endTime, isWithinWindow, hasNotStarted } =
               getTimeWindow(c.scheduledAt, c.durationMins);
+            const hasEnded = new Date() > endTime;
+
+            // Override label badge berdasarkan waktu untuk SCHEDULED/IN_PROGRESS
+            const displayStatus =
+              (effectiveStatus === "SCHEDULED" || effectiveStatus === "IN_PROGRESS") && hasNotStarted
+                ? { label: "Belum Dimulai", color: "bg-slate-100 text-slate-600 border-slate-200" }
+                : (effectiveStatus === "SCHEDULED" || effectiveStatus === "IN_PROGRESS") && hasEnded
+                  ? { label: "Sudah Selesai", color: "bg-sand-100 text-sand-600 border-sand-200" }
+                  : STATUS_LABELS[effectiveStatus];
+            const status = displayStatus ?? STATUS_LABELS[effectiveStatus];
             const hasActiveChatRoom =
               !!c.chatRoomId && (c.status === "SCHEDULED" || c.status === "IN_PROGRESS");
             // Tombol aktif hanya dalam jendela waktu konsultasi
