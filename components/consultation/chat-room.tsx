@@ -86,8 +86,8 @@ export function ChatRoom({
   const isClosed =
     consultationStatus === "COMPLETED" || consultationStatus === "CANCELLED";
 
-  // Can the current user send messages?
-  const canSend = isExpert || timeInfo.status === "active" || expertInitiated;
+  // Semua role dinonaktifkan di luar jendela waktu konsultasi
+  const canSend = timeInfo.status === "active";
 
   // Update time status every second
   useEffect(() => {
@@ -242,11 +242,9 @@ export function ChatRoom({
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 && (
           <div className="text-center py-8 text-sand-400 text-sm">
-            {isExpert
-              ? "Belum ada pesan. Anda dapat memulai percakapan kapan saja."
-              : canSend
-                ? "Belum ada pesan. Mulai percakapan!"
-                : "Menunggu sesi konsultasi dimulai..."}
+            {canSend
+              ? "Belum ada pesan. Mulai percakapan!"
+              : "Menunggu sesi konsultasi dimulai..."}
           </div>
         )}
 

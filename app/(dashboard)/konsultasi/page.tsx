@@ -5,7 +5,7 @@ import { formatDateTime, formatCurrency } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MessageCircle, Calendar, ArrowRight, Clock, CalendarDays } from "lucide-react";
+import { MessageCircle, Calendar, ArrowRight, Clock, CalendarDays, LockKeyhole } from "lucide-react";
 import { getInitials } from "@/lib/utils";
 import { ConsultationRefresher } from "@/components/konsultasi/consultation-refresher";
 import type { Metadata } from "next";
@@ -28,6 +28,27 @@ function isToday(date: Date) {
     now.getMonth() === date.getMonth() &&
     now.getDate() === date.getDate()
   );
+}
+
+function formatTime(date: Date) {
+  return date.toLocaleTimeString("id-ID", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "Asia/Jakarta",
+  });
+}
+
+function getTimeWindow(scheduledAt: Date, durationMins: number) {
+  const now = new Date();
+  const start = new Date(scheduledAt);
+  const end = new Date(start.getTime() + durationMins * 60 * 1000);
+  return {
+    start,
+    end,
+    isWithinWindow: now >= start && now <= end,
+    hasNotStarted: now < start,
+  };
 }
 
 export default async function KonsultasiPage() {
@@ -114,9 +135,14 @@ export default async function KonsultasiPage() {
                 : c.status;
             const status = STATUS_LABELS[effectiveStatus];
             const todayConsult = isToday(c.scheduledAt);
-            const canOpenChat =
-              c.chatRoomId &&
-              (c.status === "SCHEDULED" || c.status === "IN_PROGRESS");
+            const { start: startTime, end: endTime, isWithinWindow, hasNotStarted } =
+              getTimeWindow(c.scheduledAt, c.durationMins);
+            const hasActiveChatRoom =
+              !!c.chatRoomId && (c.status === "SCHEDULED" || c.status === "IN_PROGRESS");
+            // Tombol aktif hanya dalam jendela waktu konsultasi
+            const canOpenChat = hasActiveChatRoom && isWithinWindow;
+            // Chat room siap tapi belum saatnya
+            const chatRoomNotStarted = hasActiveChatRoom && hasNotStarted;
 
             return (
               <div
@@ -160,7 +186,7 @@ export default async function KonsultasiPage() {
                   <span>{formatDateTime(c.scheduledAt)}</span>
                 </div>
 
-                {/* Expert: tampil info menunggu chat atau tombol buka chat */}
+                {/* Expert: tombol/info berdasarkan waktu */}
                 {isExpert && canOpenChat && (
                   <div className="mt-3 pt-3 border-t border-sand-100">
                     <Button
@@ -177,21 +203,33 @@ export default async function KonsultasiPage() {
                   </div>
                 )}
 
-                {isExpert && !canOpenChat && todayConsult && (
+                {/* Chat room ada tapi belum waktunya */}
+                {isExpert && chatRoomNotStarted && (
+                  <div className="mt-3 pt-3 border-t border-sand-100 flex items-center gap-2 text-xs text-blue-600">
+                    <LockKeyhole className="w-3.5 h-3.5 shrink-0" />
+                    <span>
+                      Sesi dimulai pukul {formatTime(startTime)} s/d {formatTime(endTime)} — ruang chat belum aktif.
+                    </span>
+                  </div>
+                )}
+
+                {/* Belum ada chat room, hari konsultasi */}
+                {isExpert && !canOpenChat && !chatRoomNotStarted && !c.chatRoomId && todayConsult && (
                   <div className="mt-3 pt-3 border-t border-sand-100 flex items-center gap-2 text-xs text-teal-dark">
                     <Clock className="w-3.5 h-3.5 shrink-0" />
                     <span>Konsultasi hari ini — menunggu konfirmasi dari orangtua.</span>
                   </div>
                 )}
 
-                {isExpert && !canOpenChat && !todayConsult && (
+                {/* Belum ada chat room, bukan hari konsultasi */}
+                {isExpert && !canOpenChat && !chatRoomNotStarted && !c.chatRoomId && !todayConsult && (c.status === "SCHEDULED" || effectiveStatus === "SCHEDULED") && (
                   <div className="mt-3 pt-3 border-t border-sand-100 flex items-center gap-2 text-xs text-sand-400">
-                    <Clock className="w-3.5 h-3.5 shrink-0" />
-                    <span>Ruang chat terbuka pada hari konsultasi.</span>
+                    <CalendarDays className="w-3.5 h-3.5 shrink-0" />
+                    <span>Ruang chat terbuka pada {formatDateTime(startTime)}.</span>
                   </div>
                 )}
 
-                {/* Parent: tombol aksi */}
+                {/* Parent: tombol buka chat — hanya dalam jendela waktu */}
                 {!isExpert && canOpenChat && (
                   <div className="mt-3 pt-3 border-t border-sand-100">
                     <Button
@@ -208,7 +246,17 @@ export default async function KonsultasiPage() {
                   </div>
                 )}
 
-                {/* PENDING_PAYMENT + belum bayar → tombol bayar (baik hari ini maupun bukan) */}
+                {/* Parent: chat room siap tapi belum waktunya */}
+                {!isExpert && chatRoomNotStarted && (
+                  <div className="mt-3 pt-3 border-t border-sand-100 flex items-center gap-2 text-xs text-blue-600">
+                    <LockKeyhole className="w-3.5 h-3.5 shrink-0" />
+                    <span>
+                      Sesi dimulai pukul {formatTime(startTime)} s/d {formatTime(endTime)} — ruang chat belum aktif.
+                    </span>
+                  </div>
+                )}
+
+                {/* PENDING_PAYMENT + belum bayar → tombol bayar */}
                 {!isExpert && c.status === "PENDING_PAYMENT" && c.payment?.status !== "PAID" && c.payment && (
                   <div className="mt-3 pt-3 border-t border-sand-100">
                     <Button
@@ -233,7 +281,7 @@ export default async function KonsultasiPage() {
                     <span>
                       {todayConsult
                         ? "Pembayaran terkonfirmasi. Ruang chat sedang disiapkan..."
-                        : "Pembayaran terkonfirmasi. Ruang chat terbuka pada hari konsultasi."}
+                        : `Pembayaran terkonfirmasi. Ruang chat aktif pada ${formatTime(startTime)} s/d ${formatTime(endTime)}.`}
                     </span>
                   </div>
                 )}
