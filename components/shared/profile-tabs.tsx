@@ -135,6 +135,13 @@ export function ProfileTabs({
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Premium dianggap aktif hanya jika flag true DAN belum melewati tanggal kedaluwarsa.
+  // Jika sudah habis, user harus bisa membeli premium lagi.
+  const isActivePremium =
+    user.isPremium &&
+    (!user.premiumExpiresAt || new Date(user.premiumExpiresAt) > new Date());
+  const isPremiumExpired = user.isPremium && !isActivePremium;
+
   // Payment history
   interface PaymentRecord {
     id: string;
@@ -411,7 +418,7 @@ export function ProfileTabs({
                 <Badge className="text-[10px] bg-sand-100 text-sand-600 border-sand-200">
                   {roleLabel}
                 </Badge>
-                {user.isPremium && (
+                {isActivePremium && (
                   <Badge className="text-[10px] bg-amber-100 text-amber-600 border-amber-200">
                     <Crown className="w-3 h-3 mr-1" />
                     Premium
@@ -644,7 +651,7 @@ export function ProfileTabs({
       {/* ─── PREMIUM TAB ─── */}
       {tab === "premium" && (
         <div className="bg-white rounded-b-2xl border border-sand-200">
-          {user.isPremium ? (
+          {isActivePremium ? (
             /* Active premium state */
             <div className="p-6">
               <div className="rounded-2xl bg-gradient-to-br from-amber-400 to-amber-500 p-6 text-white mb-6">
@@ -688,12 +695,24 @@ export function ProfileTabs({
           ) : (
             /* Upgrade plans */
             <div className="p-6 space-y-6">
+              {isPremiumExpired && (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 max-w-2xl mx-auto flex items-start gap-2.5">
+                  <Clock className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                  <div className="text-sm text-amber-700">
+                    <span className="font-semibold">Masa Premium Anda telah berakhir.</span>{" "}
+                    {user.premiumExpiresAt && (
+                      <>Berakhir pada {formatDate(user.premiumExpiresAt)}. </>
+                    )}
+                    Perpanjang sekarang untuk kembali menikmati semua fitur premium.
+                  </div>
+                </div>
+              )}
               <div className="text-center max-w-md mx-auto">
                 <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center mx-auto mb-3">
                   <Sparkles className="w-6 h-6 text-amber-500" />
                 </div>
                 <h3 className="font-serif font-semibold text-xl text-forest-500">
-                  Upgrade ke Premium
+                  {isPremiumExpired ? "Perpanjang Premium" : "Upgrade ke Premium"}
                 </h3>
                 <p className="text-sand-500 text-sm mt-1">
                   Akses penuh ke semua fitur. Batalkan kapan saja.
