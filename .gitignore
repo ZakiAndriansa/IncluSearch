@@ -39,3 +39,6 @@ next-env.d.ts
 # prisma
 /prisma/*.db
 /prisma/migrations/dev.db*
+
+# db backups (contain user data — keep local only)
+/db-backup-*/
