@@ -13,7 +13,6 @@ import {
   Eye,
   Clock,
   ArrowRight,
-  Library,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -63,9 +62,7 @@ export function ContentGrid({ contents, total, page, perPage, isPremium }: Conte
   if (contents.length === 0) {
     return (
       <div className="rounded-2xl border border-sand-200 bg-white p-12 text-center">
-        <div className="w-14 h-14 rounded-2xl bg-sand-50 border border-sand-200 flex items-center justify-center mx-auto mb-3">
-          <Library className="w-7 h-7 text-sand-400" />
-        </div>
+        <div className="text-4xl mb-3">📚</div>
         <h3 className="font-semibold text-forest-500 mb-2">
           Tidak ada konten ditemukan
         </h3>

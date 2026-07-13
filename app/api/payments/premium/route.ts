@@ -52,8 +52,7 @@ export async function POST(request: Request) {
       clientKey: MIDTRANS_CLIENT_KEY,
     });
   } catch (err) {
-    console.error("[PREMIUM PAYMENT] Error:", err);
-    const message = err instanceof Error ? err.message : "Server error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("[PREMIUM PAYMENT]", err);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

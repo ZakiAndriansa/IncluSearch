@@ -34,20 +34,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: limit.message }, { status: 403 });
     }
 
-    const assessment = await prisma.assessment.upsert({
-      where: { userId: session.user.id },
-      update: { ...data, isActive: true },
-      create: { userId: session.user.id, ...data, isActive: true },
+    // Atomically deactivate all existing + create new active one
+    const assessment = await prisma.$transaction(async (tx) => {
+      await tx.assessment.updateMany({
+        where: { userId: session.user.id, isActive: true },
+        data: { isActive: false },
+      });
+      return tx.assessment.create({
+        data: { userId: session.user.id, ...data, isActive: true },
+      });
     });
 
     return NextResponse.json({ assessment }, { status: 201 });
   } catch (err) {
     if (err instanceof z.ZodError) {
       return NextResponse.json({ error: err.errors[0].message }, { status: 400 });
-    }
-    // Stale JWT pointing to a deleted/missing user row
-    if ((err as { code?: string }).code === "P2003") {
-      return NextResponse.json({ error: "Sesi tidak valid, silakan login ulang." }, { status: 401 });
     }
     console.error("[ASSESSMENT CREATE]", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });

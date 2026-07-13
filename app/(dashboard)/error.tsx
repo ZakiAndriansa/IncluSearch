@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect } from "react";
-import { AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function DashboardError({
@@ -18,9 +17,7 @@ export default function DashboardError({
   return (
     <div className="flex items-center justify-center h-96">
       <div className="text-center space-y-4">
-        <div className="w-14 h-14 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center mx-auto">
-          <AlertTriangle className="w-7 h-7 text-amber-500" />
-        </div>
+        <div className="text-4xl">⚠️</div>
         <h2 className="font-semibold text-forest-500">Terjadi kesalahan</h2>
         <p className="text-sand-500 text-sm">
           Gagal memuat halaman ini. Silakan coba lagi.

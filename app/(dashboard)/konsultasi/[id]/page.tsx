@@ -6,8 +6,8 @@ import { ChatRoom } from "@/components/consultation/chat-room";
 import { ConsultationHeader } from "@/components/consultation/consultation-header";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ClipboardList, CalendarDays, Clock, LockKeyhole } from "lucide-react";
-import { CHALLENGE_TYPE_LABELS, formatDateTime } from "@/lib/utils";
+import { ClipboardList } from "lucide-react";
+import { CHALLENGE_TYPE_LABELS } from "@/lib/utils";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Ruang Konsultasi" };
@@ -169,9 +169,7 @@ export default async function ConsultationRoomPage({
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
-          <div className="w-14 h-14 rounded-2xl bg-sand-50 border border-sand-200 flex items-center justify-center mx-auto mb-3">
-            {isPaid ? <CalendarDays className="w-7 h-7 text-forest-400" /> : <Clock className="w-7 h-7 text-amber-400" />}
-          </div>
+          <div className="text-4xl mb-3">{isPaid ? "📅" : "⏳"}</div>
           <h3 className="font-semibold text-forest-500 mb-2">
             {isPaid ? "Ruang Chat Belum Tersedia" : "Menunggu Konfirmasi Pembayaran"}
           </h3>
@@ -185,49 +183,8 @@ export default async function ConsultationRoomPage({
     );
   }
 
-  // Check if expert has initiated the session early
-  const isExpertUser = consultation.expert.userId === session.user.id;
-  const expertInitiated = consultation.chatRoom.messages.some(
-    (m: { type: string; content: string }) =>
-      m.type === "SYSTEM" && m.content.startsWith("__EXPERT_INITIATED__")
-  );
-
-  // Blokir akses jika di luar jendela waktu konsultasi (semua role)
-  const nowCheck = new Date();
-  const consultStart = new Date(consultation.scheduledAt);
-  const consultEnd = new Date(consultStart.getTime() + consultation.durationMins * 60 * 1000);
-
-  if (nowCheck < consultStart) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <div className="text-center space-y-3 max-w-sm">
-          <div className="w-14 h-14 rounded-2xl bg-blue-50 border border-blue-200 flex items-center justify-center mx-auto">
-            <LockKeyhole className="w-7 h-7 text-blue-400" />
-          </div>
-          <h3 className="font-semibold text-forest-500">Sesi Belum Dimulai</h3>
-          <p className="text-sand-500 text-sm">
-            Ruang chat aktif pada{" "}
-            <span className="font-medium text-forest-500">{formatDateTime(consultStart)}</span>
-            {" "}hingga{" "}
-            <span className="font-medium text-forest-500">
-              {consultEnd.toLocaleTimeString("id-ID", {
-                hour: "2-digit",
-                minute: "2-digit",
-                hour12: false,
-                timeZone: "Asia/Jakarta",
-              })}
-            </span>.
-          </p>
-          <Button asChild variant="outline" size="sm">
-            <Link href="/konsultasi">Kembali ke Daftar</Link>
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="h-[calc(100vh-8.5rem)] lg:h-[calc(100vh-7.5rem)] flex flex-col max-w-3xl mx-auto relative">
+    <div className="h-[calc(100vh-8.5rem)] lg:h-[calc(100vh-7.5rem)] flex flex-col max-w-3xl mx-auto">
       <ConsultationHeader consultation={consultation} currentUserId={session.user.id} />
       {!isParent && parentAssessment && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-start gap-3 text-sm">
@@ -259,10 +216,6 @@ export default async function ConsultationRoomPage({
           [consultation.expert.user.id]: consultation.expert.profilePhotoUrl ?? consultation.expert.user.image,
           [consultation.parent.id]: consultation.parent.image,
         }}
-        scheduledAt={consultation.scheduledAt.toISOString()}
-        durationMins={consultation.durationMins}
-        isExpert={isExpertUser}
-        expertInitiated={expertInitiated}
       />
     </div>
   );

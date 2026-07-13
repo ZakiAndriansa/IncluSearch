@@ -41,13 +41,10 @@ export default function BayarPage() {
   useEffect(() => {
     if (!paymentData?.token || !paymentData.clientKey) return;
 
-    // Mid-client- prefix = sandbox key. Production keys use different prefix.
-    const isSandbox =
-      paymentData.clientKey.startsWith("SB-") ||
-      paymentData.clientKey.startsWith("Mid-client-");
-    const src = isSandbox
-      ? "https://app.sandbox.midtrans.com/snap/snap.js"
-      : "https://app.midtrans.com/snap/snap.js";
+    const isProduction = paymentData.clientKey.startsWith("Mid-client-") && !paymentData.clientKey.startsWith("SB-");
+    const src = isProduction
+      ? "https://app.midtrans.com/snap/snap.js"
+      : "https://app.sandbox.midtrans.com/snap/snap.js";
 
     if ((window as any).snap) {
       openSnap(paymentData.token);

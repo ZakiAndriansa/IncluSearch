@@ -28,22 +28,7 @@
       "Bash(grep -E \"\\\\.\\(tsx?|json\\)$\")",
       "Bash(node -e \":*)",
       "Bash(node:*)",
-      "Bash(grep -iE \"\\\\.\\(jpg|jpeg|png|webp\\)$\")",
-      "Bash(psql --version)",
-      "Read(//c/Program Files/**)",
-      "Read(//c/Program Files \\(x86\\)/**)",
-      "Bash(NODE_OPTIONS=\"--max-old-space-size=4096\" npx next build)",
-      "Bash(tasklist)",
-      "Read(//c/IncluSearch/app/\\(dashboard/\\)/jurnal/**)",
-      "Read(//c/IncluSearch/app/api/journal/**)",
-      "Read(//c/IncluSearch/prisma/**)",
-      "Bash(taskkill //F //IM node.exe)",
-      "Bash(xargs grep:*)",
-      "Bash(grep -E \"\\\\.\\(tsx|ts\\)$\")",
-      "Bash(npx dotenv:*)",
-      "Bash(grep -E \"\\\\.\\(ts|sql\\)$\")",
-      "Bash(rtk git *)",
-      "Bash(rtk tsc *)"
+      "Bash(grep -iE \"\\\\.\\(jpg|jpeg|png|webp\\)$\")"
     ]
   }
 }

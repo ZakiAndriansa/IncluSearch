@@ -61,7 +61,7 @@ export default function LoginPage() {
       {/* Google OAuth */}
       <Button
         variant="outline"
-        className="w-full h-11 border-sand-300 hover:bg-sand-50 tap-target"
+        className="w-full h-11 border-sand-400 hover:bg-sand-100 tap-target"
         onClick={handleGoogleLogin}
         disabled={isLoading}
       >
@@ -91,7 +91,7 @@ export default function LoginPage() {
           <span className="w-full border-t border-sand-300" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-white px-2 text-sand-500">atau</span>
+          <span className="bg-sand-50 px-2 text-sand-500">atau</span>
         </div>
       </div>
 
@@ -109,7 +109,7 @@ export default function LoginPage() {
             required
             value={form.email}
             onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-            className="h-11 border-sand-300 focus:border-forest-400 focus:ring-forest-400/20"
+            className="h-11 border-sand-400 focus:border-forest-500 focus:ring-forest-500"
           />
         </div>
 
@@ -136,7 +136,7 @@ export default function LoginPage() {
               onChange={(e) =>
                 setForm((f) => ({ ...f, password: e.target.value }))
               }
-              className="h-11 pr-10 border-sand-300 focus:border-forest-400 focus:ring-forest-400/20"
+              className="h-11 pr-10 border-sand-400 focus:border-forest-500 focus:ring-forest-500"
             />
             <button
               type="button"

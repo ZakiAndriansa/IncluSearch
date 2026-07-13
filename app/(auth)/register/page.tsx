@@ -11,9 +11,8 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 
 const USER_ROLES = [
-  { id: "parent", value: "PARENT", label: "Orang Tua / Wali", desc: "Saya orang tua / wali anak ABK" },
-  { id: "teacher", value: "PARENT", label: "Guru / Pendidik", desc: "Saya pendidik yang mendampingi ABK" },
-  { id: "expert", value: "EXPERT", label: "Pakar / Terapis", desc: "Saya profesional di bidang ortopedagogik" },
+  { value: "PARENT", label: "Orang Tua / Wali", desc: "Saya orang tua / wali anak ABK" },
+  { value: "PARENT", label: "Guru / Pendidik", desc: "Saya pendidik yang mendampingi ABK" },
 ];
 
 export default function RegisterPage() {
@@ -22,7 +21,6 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [step, setStep] = useState<1 | 2>(1);
-  const [selectedRoleId, setSelectedRoleId] = useState("parent");
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -55,12 +53,7 @@ export default function RegisterPage() {
         redirect: false,
       });
 
-      // Redirect to onboarding for PARENT role
-      if (form.role === "PARENT") {
-        router.push("/onboarding");
-      } else {
-        router.push("/");
-      }
+      router.push("/");
       router.refresh();
     } catch (err: unknown) {
       toast({
@@ -131,7 +124,7 @@ export default function RegisterPage() {
                 required
                 value={form.name}
                 onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                className="h-11 border-sand-300 focus:border-forest-400"
+                className="h-11 border-sand-400 focus:border-forest-500"
               />
             </div>
 
@@ -147,7 +140,7 @@ export default function RegisterPage() {
                 required
                 value={form.email}
                 onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-                className="h-11 border-sand-300 focus:border-forest-400"
+                className="h-11 border-sand-400 focus:border-forest-500"
               />
             </div>
 
@@ -166,7 +159,7 @@ export default function RegisterPage() {
                   onChange={(e) =>
                     setForm((f) => ({ ...f, password: e.target.value }))
                   }
-                  className="h-11 pr-10 border-sand-300 focus:border-forest-400"
+                  className="h-11 pr-10 border-sand-400 focus:border-forest-500"
                 />
                 <button
                   type="button"
@@ -208,20 +201,17 @@ export default function RegisterPage() {
             </Label>
             {USER_ROLES.map((role) => (
               <button
-                key={role.id}
+                key={role.label}
                 type="button"
-                onClick={() => {
-                  setSelectedRoleId(role.id);
-                  setForm((f) => ({ ...f, role: role.value }));
-                }}
+                onClick={() => setForm((f) => ({ ...f, role: role.value }))}
                 className={`w-full p-4 rounded-xl border-2 text-left transition-all ${
-                  selectedRoleId === role.id
-                    ? "border-forest-400 bg-forest-50/50 shadow-sm"
-                    : "border-sand-200 hover:border-sand-300 hover:bg-sand-50/50"
+                  form.role === role.value
+                    ? "border-forest-500 bg-forest-50"
+                    : "border-sand-300 hover:border-sand-400"
                 }`}
               >
-                <div className={`font-medium ${selectedRoleId === role.id ? "text-forest-600" : "text-sand-800"}`}>{role.label}</div>
-                <div className="text-sm text-sand-500 mt-0.5">{role.desc}</div>
+                <div className="font-medium text-forest-500">{role.label}</div>
+                <div className="text-sm text-sand-600 mt-0.5">{role.desc}</div>
               </button>
             ))}
           </div>
@@ -232,7 +222,7 @@ export default function RegisterPage() {
             <Button
               type="button"
               variant="outline"
-              className="flex-1 h-11 border-sand-300"
+              className="flex-1 h-11 border-sand-400"
               onClick={() => setStep(1)}
             >
               Kembali

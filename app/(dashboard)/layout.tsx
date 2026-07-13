@@ -34,7 +34,7 @@ export default async function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-sand-50">
-      {/* Top navbar */}
+      {/* Top navbar — desktop */}
       <Navbar user={user} />
 
       <div className="flex">
@@ -42,8 +42,8 @@ export default async function DashboardLayout({
         <Sidebar user={user} />
 
         {/* Main content */}
-        <main className="flex-1 lg:ml-64 min-h-[calc(100vh-3.5rem)] pb-20 lg:pb-8">
-          <div className="max-w-5xl mx-auto px-4 lg:px-8 py-5 lg:py-6">
+        <main className="flex-1 lg:ml-64 min-h-[calc(100vh-3.5rem)] pb-20 lg:pb-6">
+          <div className="max-w-6xl mx-auto px-4 lg:px-8 py-6">
             {children}
           </div>
         </main>

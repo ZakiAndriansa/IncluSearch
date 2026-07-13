@@ -10,22 +10,12 @@ const PROTECTED_PATHS = [
   "/forum",
   "/profil",
   "/admin",
-  "/onboarding",
-  "/jurnal",
-  "/action-plan",
-  "/ai-assistant",
   "/api/assessments",
   "/api/consultations",
   "/api/chat",
   "/api/experts",
   "/api/users/profile",
   "/api/payments/premium",
-  "/api/payments/history",
-  "/api/journal",
-  "/api/action-plans",
-  "/api/ai-chat",
-  "/api/notifications",
-  "/api/onboarding",
 ];
 
 // Admin-only paths

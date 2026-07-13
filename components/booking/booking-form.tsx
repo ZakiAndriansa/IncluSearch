@@ -157,8 +157,8 @@ export function BookingForm({
         snap.pay(data.paymentToken, {
           onSuccess: () => router.push(`/konsultasi/${data.consultationId}?status=success`),
           onPending: () => router.push(`/konsultasi/${data.consultationId}?status=pending`),
-          onError: () => router.push(`/konsultasi/${data.consultationId}/bayar`),
-          onClose: () => router.push(`/konsultasi/${data.consultationId}/bayar`),
+          onError: () => setError("Pembayaran gagal. Silakan coba lagi."),
+          onClose: () => setLoading(false),
         });
       } else {
         // Fallback: redirect to Midtrans hosted page

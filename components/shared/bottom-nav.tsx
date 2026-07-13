@@ -7,10 +7,9 @@ import {
   Users,
   BookOpen,
   MessageCircle,
+  Users2,
   CalendarDays,
   Shield,
-  Bot,
-  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { UserRole } from "@prisma/client";
@@ -24,16 +23,17 @@ interface NavItem {
 
 const PARENT_NAV: NavItem[] = [
   { href: "/", label: "Beranda", icon: LayoutDashboard, exact: true },
-  { href: "/ai-assistant", label: "Pendamping", icon: Sparkles },
   { href: "/cari-pakar", label: "Pakar", icon: Users },
   { href: "/konsultasi", label: "Konsultasi", icon: MessageCircle },
   { href: "/knowledge-hub", label: "Ilmu", icon: BookOpen },
+  { href: "/forum", label: "Forum", icon: Users2 },
 ];
 
 const EXPERT_NAV: NavItem[] = [
   { href: "/", label: "Beranda", icon: LayoutDashboard, exact: true },
   { href: "/konsultasi", label: "Jadwal", icon: CalendarDays },
   { href: "/knowledge-hub", label: "Ilmu", icon: BookOpen },
+  { href: "/forum", label: "Forum", icon: Users2 },
 ];
 
 const ADMIN_NAV: NavItem[] = [
@@ -60,8 +60,8 @@ export function BottomNav({ role }: BottomNavProps) {
     exact ? pathname === href : pathname.startsWith(href);
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 lg:hidden border-t border-sand-200/60 bg-white/98 backdrop-blur-lg pb-safe">
-      <div className="flex items-center justify-around px-1 pt-1.5 pb-0.5">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 lg:hidden border-t border-sand-200 bg-white/95 backdrop-blur-md pb-safe">
+      <div className="flex items-center justify-around px-2 pt-2 pb-1">
         {navItems.map((item) => {
           const active = isActive(item.href, item.exact);
           return (
@@ -69,24 +69,23 @@ export function BottomNav({ role }: BottomNavProps) {
               key={item.href}
               href={item.href}
               className={cn(
-                "relative flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all min-w-[52px]",
-                active ? "text-forest-500" : "text-sand-400"
+                "flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all tap-target min-w-[56px]",
+                active ? "text-forest-500" : "text-sand-400 hover:text-sand-600"
               )}
             >
               <item.icon
-                className={cn("w-5 h-5 transition-all", active && "text-forest-500")}
-                strokeWidth={active ? 2.2 : 1.8}
+                className={cn("w-5 h-5 transition-transform", active && "scale-110")}
               />
               <span
                 className={cn(
-                  "text-[10px] leading-none mt-0.5",
-                  active ? "text-forest-500 font-semibold" : "text-sand-400 font-medium"
+                  "text-[10px] font-medium leading-none",
+                  active ? "text-forest-500" : "text-sand-400"
                 )}
               >
                 {item.label}
               </span>
               {active && (
-                <span className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-5 h-0.5 rounded-full bg-forest-500" />
+                <span className="absolute bottom-1 w-1 h-1 rounded-full bg-forest-500" />
               )}
             </Link>
           );
