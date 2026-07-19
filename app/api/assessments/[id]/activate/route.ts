@@ -15,14 +15,15 @@ export async function POST(
 
   const assessment = await prisma.assessment.findFirst({
     where: { id: params.id, userId: session.user.id },
+    select: { id: true },
   });
 
   if (!assessment) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   await prisma.$transaction([
-    // Deactivate all assessments for this user
+    // Deactivate only the currently-active ones (not the whole history).
     prisma.assessment.updateMany({
-      where: { userId: session.user.id },
+      where: { userId: session.user.id, isActive: true },
       data: { isActive: false },
     }),
     // Activate the selected one

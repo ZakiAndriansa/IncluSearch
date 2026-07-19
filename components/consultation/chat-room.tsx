@@ -5,7 +5,7 @@ import {
   useEffect,
   useRef,
 } from "react";
-import { Send, Paperclip, Loader2 } from "lucide-react";
+import { Send, Loader2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";

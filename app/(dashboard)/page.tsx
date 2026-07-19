@@ -5,6 +5,7 @@ import { FeaturedExperts } from "@/components/experts/featured-experts";
 import { RecentContent } from "@/components/knowledge/recent-content";
 import { ExpertCardSkeleton } from "@/components/experts/expert-card-skeleton";
 import { checkConsultationQuota } from "@/lib/quota-checker";
+import { getChatAccess } from "@/lib/consultation";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 import {
   CalendarDays, Star, Users, MessageCircle,
@@ -235,7 +236,15 @@ async function ExpertDashboard({ userId }: { userId: string }) {
           </div>
         ) : (
           <div className="space-y-3">
-            {todayConsultations.map((c) => (
+            {todayConsultations.map((c) => {
+              // These are today's SCHEDULED/IN_PROGRESS (paid) consultations —
+              // gate the chat button by the scheduled time window.
+              const access = getChatAccess(c.status, c.scheduledAt, c.durationMins, true);
+              const timeLabel = c.scheduledAt.toLocaleTimeString("id-ID", {
+                hour: "2-digit",
+                minute: "2-digit",
+              });
+              return (
               <div key={c.id} className="bg-white rounded-2xl border border-sand-200 p-4 flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-forest-100 flex items-center justify-center text-forest-500 font-bold text-sm flex-shrink-0">
@@ -249,15 +258,22 @@ async function ExpertDashboard({ userId }: { userId: string }) {
                     </div>
                   </div>
                 </div>
-                {c.chatRoomId && (
+                {access === "open" ? (
                   <Button asChild size="sm" className="bg-forest-500 hover:bg-forest-600 text-white text-xs h-8">
                     <Link href={`/konsultasi/${c.id}`}>
                       Buka Chat <ArrowRight className="w-3 h-3 ml-1" />
                     </Link>
                   </Button>
+                ) : access === "before" ? (
+                  <span className="text-xs text-sand-400 flex items-center gap-1">
+                    <Clock className="w-3 h-3" /> Terbuka pukul {timeLabel}
+                  </span>
+                ) : (
+                  <span className="text-xs text-sand-400">Sesi selesai</span>
                 )}
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>

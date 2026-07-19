@@ -2,12 +2,8 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createPremiumTransaction, MIDTRANS_CLIENT_KEY } from "@/lib/payments";
-import { generateOrderId, formatCurrency } from "@/lib/utils";
-
-const PREMIUM_PLANS: Record<string, { price: number; name: string }> = {
-  monthly: { price: 99000, name: "Premium Bulanan" },
-  quarterly: { price: 249000, name: "Premium 3 Bulan" },
-};
+import { generateOrderId } from "@/lib/utils";
+import { getPlan } from "@/lib/plans";
 
 export async function POST(request: Request) {
   const session = await auth();
@@ -15,7 +11,7 @@ export async function POST(request: Request) {
 
   try {
     const { planId } = await request.json();
-    const plan = PREMIUM_PLANS[planId];
+    const plan = getPlan(planId);
     if (!plan) {
       return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
     }

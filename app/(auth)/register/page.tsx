@@ -10,10 +10,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 
+// `id` is a unique UI key so only one option highlights at a time.
+// `role` is the persisted UserRole enum — the schema has no TEACHER role yet,
+// so both self-identifications map to PARENT. Add a `profession` field (or a
+// TEACHER enum value) if the parent/teacher distinction ever needs storing.
 const USER_ROLES = [
-  { value: "PARENT", label: "Orang Tua / Wali", desc: "Saya orang tua / wali anak ABK" },
-  { value: "PARENT", label: "Guru / Pendidik", desc: "Saya pendidik yang mendampingi ABK" },
-];
+  { id: "parent", role: "PARENT", label: "Orang Tua / Wali", desc: "Saya orang tua / wali anak ABK" },
+  { id: "teacher", role: "PARENT", label: "Guru / Pendidik", desc: "Saya pendidik yang mendampingi ABK" },
+  { id: "expert", role: "EXPERT", label: "Pakar / Terapis", desc: "Saya pakar ortopedagogik / terapis ABK" },
+] as const;
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -25,7 +30,8 @@ export default function RegisterPage() {
     name: "",
     email: "",
     password: "",
-    role: "PARENT",
+    roleKey: "parent", // which option is selected in the UI
+    role: "PARENT", // the persisted UserRole enum
   });
 
   async function handleSubmit(e: React.FormEvent) {
@@ -201,11 +207,11 @@ export default function RegisterPage() {
             </Label>
             {USER_ROLES.map((role) => (
               <button
-                key={role.label}
+                key={role.id}
                 type="button"
-                onClick={() => setForm((f) => ({ ...f, role: role.value }))}
+                onClick={() => setForm((f) => ({ ...f, roleKey: role.id, role: role.role }))}
                 className={`w-full p-4 rounded-xl border-2 text-left transition-all ${
-                  form.role === role.value
+                  form.roleKey === role.id
                     ? "border-forest-500 bg-forest-50"
                     : "border-sand-300 hover:border-sand-400"
                 }`}

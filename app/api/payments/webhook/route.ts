@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { handleMidtransWebhook } from "@/lib/payments";
+import { PaymentFinalError } from "@/lib/settlement";
 
 export async function POST(request: Request) {
   try {
@@ -14,8 +15,16 @@ export async function POST(request: Request) {
     console.log("[WEBHOOK] Processed OK:", payload.order_id);
     return NextResponse.json({ status: "ok" });
   } catch (err) {
-    console.error("[WEBHOOK] Error:", err instanceof Error ? err.message : err);
     const message = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 400 });
+    console.error("[WEBHOOK] Error:", message);
+
+    // Final errors (bad signature, unknown order, amount mismatch) → 400 so
+    // Midtrans stops retrying. Everything else (DB down, timeout) is transient
+    // → 500 so Midtrans retries and the settlement is not lost.
+    const isFinal = err instanceof PaymentFinalError;
+    return NextResponse.json(
+      { error: message },
+      { status: isFinal ? 400 : 500 }
+    );
   }
 }

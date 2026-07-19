@@ -24,8 +24,8 @@ export interface MatchResult {
 }
 
 interface MatchBreakdown {
-  specialization: number; // max 40
-  challengeType: number;  // max 30
+  specialization: number; // max 40 — how well specializations fit the need
+  experience: number;     // max 30 — expert seniority (independent signal)
   availability: number;   // max 15
   rating: number;         // max 10
   location: number;       // max 5
@@ -97,49 +97,56 @@ function scoreSpecialization(
         `Pengalaman ${secondaryMatches.map((s) => SPEC_LABELS[s]).join(", ")}`
       );
     }
-    // Broad match: expert has any overlap
-    const anyMatch = expertSpecs.some((s) => targetSpecs.includes(s));
-    if (!anyMatch && expertSpecs.length > 0) score += 5;
+    // (Removed a broken "broad match" bonus that awarded +5 to experts with NO
+    //  overlap — inverted from its own comment. Non-matching experts get 0 here.)
   }
 
   return { score: Math.min(score, 40), reasons };
 }
 
 /**
- * Score 0-30: direct challenge type mapping to expert profile
- * Checks expert bio keywords + specialization breadth for the challenge
+ * Score 0-30: expert seniority.
+ *
+ * This is deliberately an INDEPENDENT signal from scoreSpecialization (which
+ * already measures how well the expert's specializations fit the child's
+ * needs). It scores on `yearsExperience` — a field that was previously not
+ * used in matching at all — so the two dimensions no longer double-count the
+ * same specialization overlap.
  */
-function scoreChallengeType(
-  expertSpecs: SpecializationType[],
-  challengeType: ChallengeType
+function scoreExperience(
+  yearsExperience: number
 ): { score: number; reasons: string[] } {
-  const targetSpecs = CHALLENGE_TO_SPEC_MAP[challengeType];
-  const matchCount = expertSpecs.filter((s) => targetSpecs.includes(s)).length;
   const reasons: string[] = [];
+  let score: number;
 
-  let score = 0;
-  if (matchCount >= 2) {
+  if (yearsExperience >= 10) {
     score = 30;
-    reasons.push("Menangani berbagai aspek kondisi anak");
-  } else if (matchCount === 1) {
+    reasons.push(`${yearsExperience} tahun pengalaman`);
+  } else if (yearsExperience >= 7) {
+    score = 25;
+    reasons.push(`${yearsExperience} tahun pengalaman`);
+  } else if (yearsExperience >= 5) {
     score = 20;
-  } else if (expertSpecs.length >= 3) {
-    score = 10;
-    reasons.push("Pengalaman multi-disiplin");
+    reasons.push(`${yearsExperience} tahun pengalaman`);
+  } else if (yearsExperience >= 3) {
+    score = 14;
+  } else if (yearsExperience >= 1) {
+    score = 8;
+  } else {
+    score = 3; // new expert — small baseline
   }
 
   return { score, reasons };
 }
 
 /**
- * Score 0-15: availability (at least 3 active slots = full score)
+ * Score 0-15: availability (at least 3 active slots = full score).
+ * Callers only pass experts that are already `isAvailable`, so that check is
+ * handled upstream (see matchExperts).
  */
 function scoreAvailability(
-  slots: { dayOfWeek: number; isActive: boolean }[],
-  isAvailable: boolean
+  slots: { dayOfWeek: number; isActive: boolean }[]
 ): { score: number; reasons: string[] } {
-  if (!isAvailable) return { score: 0, reasons: ["Sedang tidak tersedia"] };
-
   const activeSlots = slots.filter((s) => s.isActive).length;
   const reasons: string[] = [];
 
@@ -207,8 +214,8 @@ export function matchExperts(
     .filter((e) => e.isAvailable)
     .map((expert) => {
       const spec = scoreSpecialization(expert.specializations, assessment.challengeType);
-      const challenge = scoreChallengeType(expert.specializations, assessment.challengeType);
-      const avail = scoreAvailability(expert.availabilitySlots, expert.isAvailable);
+      const experience = scoreExperience(expert.yearsExperience);
+      const avail = scoreAvailability(expert.availabilitySlots);
       const rating = scoreRating(expert.rating, expert.totalReviews);
       const location = scoreLocation(
         expert.locationType,
@@ -217,18 +224,18 @@ export function matchExperts(
 
       const breakdown: MatchBreakdown = {
         specialization: spec.score,
-        challengeType: challenge.score,
+        experience: experience.score,
         availability: avail.score,
         rating: rating.score,
         location: location.score,
       };
 
       const totalScore =
-        spec.score + challenge.score + avail.score + rating.score + location.score;
+        spec.score + experience.score + avail.score + rating.score + location.score;
 
       const allReasons = [
         ...spec.reasons,
-        ...challenge.reasons,
+        ...experience.reasons,
         ...avail.reasons,
         ...rating.reasons,
         ...location.reasons,
@@ -247,26 +254,4 @@ export function matchExperts(
   return results
     .sort((a, b) => b.score - a.score)
     .slice(0, topN);
-}
-
-/**
- * Compute and upsert match scores for an assessment (called server-side).
- */
-export function computeMatchScoreData(
-  assessment: Assessment,
-  experts: ExpertWithProfile[]
-): Array<{
-  assessmentId: string;
-  expertId: string;
-  score: number;
-  reasons: string[];
-  breakdown: MatchBreakdown;
-}> {
-  return matchExperts(assessment, experts, experts.length).map((r) => ({
-    assessmentId: assessment.id,
-    expertId: r.expertId,
-    score: r.score,
-    reasons: r.reasons,
-    breakdown: r.breakdown,
-  }));
 }

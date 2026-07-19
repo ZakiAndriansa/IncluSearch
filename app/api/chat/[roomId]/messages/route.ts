@@ -1,28 +1,45 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getChatAccess } from "@/lib/consultation";
 import { z } from "zod";
 
 const MessageSchema = z.object({
   content: z.string().min(1).max(4000),
 });
 
-// Verify user has access to this chat room
-async function verifyRoomAccess(roomId: string, userId: string) {
+// Load the consultation behind a chat room (null if room/consultation missing).
+async function getRoomConsultation(roomId: string) {
   const chatRoom = await prisma.chatRoom.findUnique({
     where: { id: roomId },
-    include: {
+    select: {
       consultation: {
-        select: { parentId: true, expert: { select: { userId: true } } },
+        select: {
+          parentId: true,
+          status: true,
+          scheduledAt: true,
+          durationMins: true,
+          expert: { select: { userId: true } },
+        },
       },
     },
   });
+  return chatRoom?.consultation ?? null;
+}
 
-  if (!chatRoom?.consultation) return false;
+type RoomConsultation = NonNullable<Awaited<ReturnType<typeof getRoomConsultation>>>;
 
-  return (
-    chatRoom.consultation.parentId === userId ||
-    chatRoom.consultation.expert.userId === userId
+function isParticipant(c: RoomConsultation, userId: string) {
+  return c.parentId === userId || c.expert.userId === userId;
+}
+
+// Chat access from the consultation's schedule (single source: lib/consultation).
+function chatAccessOf(c: RoomConsultation) {
+  return getChatAccess(
+    c.status,
+    c.scheduledAt,
+    c.durationMins,
+    c.status !== "PENDING_PAYMENT"
   );
 }
 
@@ -33,8 +50,17 @@ export async function GET(
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const hasAccess = await verifyRoomAccess(params.roomId, session.user.id);
-  if (!hasAccess) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const consultation = await getRoomConsultation(params.roomId);
+  if (!consultation || !isParticipant(consultation, session.user.id)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  // History is readable once the window has opened (during or after); before
+  // the scheduled time — or when unpaid/cancelled — the room stays closed.
+  const access = chatAccessOf(consultation);
+  if (access !== "open" && access !== "after") {
+    return NextResponse.json({ error: "Ruang chat belum tersedia" }, { status: 403 });
+  }
 
   const { searchParams } = new URL(request.url);
   const afterId = searchParams.get("after");
@@ -70,8 +96,25 @@ export async function POST(
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const hasAccess = await verifyRoomAccess(params.roomId, session.user.id);
-  if (!hasAccess) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const consultation = await getRoomConsultation(params.roomId);
+  if (!consultation || !isParticipant(consultation, session.user.id)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  // Sending is only allowed while the scheduled window is OPEN. Enforced
+  // server-side so it can't be bypassed by calling the API directly.
+  const access = chatAccessOf(consultation);
+  if (access !== "open") {
+    const message =
+      access === "before"
+        ? "Konsultasi belum dimulai"
+        : access === "after"
+        ? "Konsultasi sudah selesai"
+        : access === "cancelled"
+        ? "Konsultasi dibatalkan"
+        : "Menunggu konfirmasi pembayaran";
+    return NextResponse.json({ error: message }, { status: 403 });
+  }
 
   try {
     const body = await request.json();

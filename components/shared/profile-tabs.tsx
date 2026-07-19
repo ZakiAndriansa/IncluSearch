@@ -31,6 +31,7 @@ import {
   CHALLENGE_TYPE_LABELS,
 } from "@/lib/utils";
 import { AssessmentForm } from "@/components/assessment/assessment-form";
+import { PREMIUM_PLANS as PLAN_CONFIG } from "@/lib/plans";
 import type { Assessment, ConsultationQuota, UserRole } from "@prisma/client";
 
 const TABS = [
@@ -39,11 +40,19 @@ const TABS = [
   { id: "premium", label: "Premium", icon: Crown },
 ];
 
+// Prices come from the shared plan config (same source the payment API charges
+// from) so the displayed price can never drift from the billed price. Savings
+// are derived, not hardcoded.
+const _monthly = PLAN_CONFIG.monthly.price;
+const _quarterly = PLAN_CONFIG.quarterly.price;
+const _quarterlySavings = _monthly * 3 - _quarterly;
+const _quarterlySavingsPct = Math.round((1 - _quarterly / (_monthly * 3)) * 100);
+
 const PREMIUM_PLANS = [
   {
     id: "monthly",
     name: "Bulanan",
-    price: 99000,
+    price: _monthly,
     duration: "1 bulan",
     features: [
       "Konsultasi tanpa batas",
@@ -56,12 +65,12 @@ const PREMIUM_PLANS = [
   {
     id: "quarterly",
     name: "3 Bulan",
-    price: 249000,
+    price: _quarterly,
     duration: "3 bulan",
-    badge: "Hemat 16%",
+    badge: `Hemat ${_quarterlySavingsPct}%`,
     features: [
       "Semua fitur bulanan",
-      "Hemat Rp 48.000",
+      `Hemat ${formatCurrency(_quarterlySavings)}`,
       "Akses laporan progress anak",
     ],
   },
@@ -107,6 +116,8 @@ export function ProfileTabs({
   });
   const [isSaving, setIsSaving] = useState(false);
   const [isUpgrading, setIsUpgrading] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (paymentStatus === "success" && paymentOrderId) {
@@ -171,13 +182,17 @@ export function ProfileTabs({
   }
 
   async function deleteAssessment(id: string) {
+    setIsDeleting(true);
     try {
       const res = await fetch(`/api/assessments/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error();
       toast({ title: "Asesmen dihapus" });
+      setConfirmDeleteId(null);
       router.refresh();
     } catch {
       toast({ title: "Gagal menghapus asesmen", variant: "destructive" });
+    } finally {
+      setIsDeleting(false);
     }
   }
 
@@ -449,7 +464,7 @@ export function ProfileTabs({
                       </button>
                     )}
                     <button
-                      onClick={() => deleteAssessment(a.id)}
+                      onClick={() => setConfirmDeleteId(a.id)}
                       className="text-sand-400 hover:text-red-500 transition-colors tap-target p-1"
                       title="Hapus asesmen"
                     >
@@ -571,6 +586,48 @@ export function ProfileTabs({
               </p>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Delete-assessment confirmation */}
+      {confirmDeleteId && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-assessment-title"
+          onKeyDown={(e) => e.key === "Escape" && !isDeleting && setConfirmDeleteId(null)}
+          onClick={() => !isDeleting && setConfirmDeleteId(null)}
+        >
+          <div
+            className="bg-white rounded-2xl border border-sand-200 p-6 max-w-sm w-full space-y-4 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 id="delete-assessment-title" className="font-serif font-bold text-lg text-forest-500">
+              Hapus asesmen ini?
+            </h3>
+            <p className="text-sm text-sand-500">
+              Asesmen akan dihapus dan tidak lagi digunakan untuk rekomendasi pakar. Tindakan ini tidak dapat dibatalkan.
+            </p>
+            <div className="flex gap-3 pt-1">
+              <Button
+                variant="outline"
+                className="flex-1 border-sand-300"
+                onClick={() => setConfirmDeleteId(null)}
+                disabled={isDeleting}
+              >
+                Batal
+              </Button>
+              <Button
+                className="flex-1 bg-red-500 hover:bg-red-600 text-white"
+                onClick={() => deleteAssessment(confirmDeleteId)}
+                disabled={isDeleting}
+                autoFocus
+              >
+                {isDeleting ? "Menghapus..." : "Hapus"}
+              </Button>
+            </div>
+          </div>
         </div>
       )}
     </div>

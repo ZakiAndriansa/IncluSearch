@@ -61,7 +61,8 @@ export const viewport: Viewport = {
   themeColor: "rgb(25, 53, 12)",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
+  // No maximumScale — disabling pinch-zoom fails WCAG 1.4.4, and this is an
+  // accessibility platform. Users must be able to zoom.
 };
 
 export default function RootLayout({

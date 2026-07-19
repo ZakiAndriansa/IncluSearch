@@ -6,6 +6,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MatchBadge } from "@/components/experts/match-badge";
+import { matchExperts, type ExpertWithProfile } from "@/lib/matching-algorithm";
+import { ReviewForm } from "@/components/experts/review-form";
 import {
   formatCurrency,
   getInitials,
@@ -48,33 +50,46 @@ export default async function ExpertProfilePage({
   const session = await auth();
   if (!session) return null;
 
-  const [expert, activeAssessment] = await Promise.all([
+  const [expert, activeAssessment, completedConsult, myReview] = await Promise.all([
     prisma.expertProfile.findUnique({
       where: { id: params.id, isVerified: true },
       include: {
         user: { select: { name: true, image: true, email: true } },
         availabilitySlots: { where: { isActive: true }, orderBy: { dayOfWeek: "asc" } },
-        reviews: { orderBy: { createdAt: "desc" }, take: 5 },
+        reviews: {
+          orderBy: { createdAt: "desc" },
+          take: 5,
+          include: { reviewer: { select: { name: true } } },
+        },
       },
     }),
     prisma.assessment.findFirst({
       where: { userId: session.user.id, isActive: true },
       orderBy: { createdAt: "desc" },
     }),
+    // Eligibility to review: a completed consultation with this expert.
+    prisma.consultation.findFirst({
+      where: { expertId: params.id, parentId: session.user.id, status: "COMPLETED" },
+      select: { id: true },
+    }),
+    prisma.expertReview.findUnique({
+      where: { expertId_reviewerId: { expertId: params.id, reviewerId: session.user.id } },
+      select: { rating: true, comment: true },
+    }),
   ]);
 
   if (!expert) notFound();
+  const canReview = Boolean(completedConsult);
 
-  // Match score for premium users
+  // Match score for premium users — computed on the fly from the active
+  // assessment (the MatchScore table was never populated).
   let matchScore: number | undefined;
   let matchReasons: string[] = [];
   if (session.user.isPremium && activeAssessment) {
-    const ms = await prisma.matchScore.findUnique({
-      where: { assessmentId_expertId: { assessmentId: activeAssessment.id, expertId: expert.id } },
-    });
-    if (ms) {
-      matchScore = ms.score;
-      matchReasons = ms.reasons;
+    const [match] = matchExperts(activeAssessment, [expert as unknown as ExpertWithProfile], 1);
+    if (match) {
+      matchScore = match.score;
+      matchReasons = match.reasons;
     }
   }
 
@@ -272,6 +287,15 @@ export default async function ExpertProfilePage({
       )}
 
       {/* Reviews */}
+      {/* Review form for parents who completed a consultation */}
+      {canReview && (
+        <ReviewForm
+          expertId={expert.id}
+          initialRating={myReview?.rating}
+          initialComment={myReview?.comment}
+        />
+      )}
+
       {expert.reviews.length > 0 && (
         <div className="bg-white rounded-2xl border border-sand-200 p-5">
           <div className="flex items-center gap-2 mb-4">
@@ -286,6 +310,9 @@ export default async function ExpertProfilePage({
                 key={review.id}
                 className="border-b border-sand-100 last:border-0 pb-4 last:pb-0"
               >
+                <div className="text-sm font-medium text-forest-500 mb-1">
+                  {review.reviewer.name ?? "Pengguna"}
+                </div>
                 <div className="flex items-center gap-1 mb-1">
                   {Array.from({ length: 5 }).map((_, i) => (
                     <Star

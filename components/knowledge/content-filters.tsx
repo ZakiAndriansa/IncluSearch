@@ -42,7 +42,12 @@ export function ContentFilters({ searchParams }: ContentFiltersProps) {
   const hasFilters = searchParams.category || searchParams.type || searchParams.q;
 
   return (
-    <div className="bg-white rounded-2xl border border-sand-200 p-4">
+    <div
+      className={`bg-white rounded-2xl border border-sand-200 p-4 transition-opacity ${
+        isPending ? "opacity-60 pointer-events-none" : ""
+      }`}
+      aria-busy={isPending}
+    >
       <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 sm:gap-3">
         {/* Category */}
         <Select

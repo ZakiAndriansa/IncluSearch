@@ -184,7 +184,12 @@ export function CommunityDirectory({
           <p className="text-sand-500 text-sm">Coba ubah filter pencarian Anda.</p>
         </div>
       ) : (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div
+          className={`grid sm:grid-cols-2 lg:grid-cols-3 gap-4 transition-opacity ${
+            isPending ? "opacity-60" : ""
+          }`}
+          aria-busy={isPending}
+        >
           {communities.map((community) => (
             <div
               key={community.id}

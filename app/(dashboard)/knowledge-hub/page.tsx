@@ -3,8 +3,9 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ContentGrid } from "@/components/knowledge/content-grid";
 import { ContentFilters } from "@/components/knowledge/content-filters";
-import { Crown, BookOpen } from "lucide-react";
+import { Crown, PenLine } from "lucide-react";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -79,13 +80,23 @@ export default async function KnowledgeHubPage({
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div>
-        <h1 className="text-xl sm:text-2xl font-serif font-bold text-forest-500">
-          Knowledge Hub
-        </h1>
-        <p className="text-sand-500 text-sm mt-1">
-          {total} konten edukasi tentang Anak Berkebutuhan Khusus
-        </p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-serif font-bold text-forest-500">
+            Knowledge Hub
+          </h1>
+          <p className="text-sand-500 text-sm mt-1">
+            {total} konten edukasi tentang Anak Berkebutuhan Khusus
+          </p>
+        </div>
+        {(session.user.role === "EXPERT" || session.user.role === "ADMIN") && (
+          <Button asChild className="bg-forest-500 hover:bg-forest-600 text-white flex-shrink-0">
+            <Link href="/knowledge-hub/saya">
+              <PenLine className="w-4 h-4 mr-1.5" />
+              Artikel Saya
+            </Link>
+          </Button>
+        )}
       </div>
 
       {/* Premium banner for free users */}

@@ -1,11 +1,18 @@
 // Midtrans payment integration
 // Docs: https://api-docs.midtrans.com/
 
-import { prisma } from "@/lib/prisma";
+import { settlePayment, cancelPayment, PaymentFinalError } from "@/lib/settlement";
 
-const MIDTRANS_SERVER_KEY = process.env.MIDTRANS_SERVER_KEY!;
-const MIDTRANS_CLIENT_KEY = process.env.MIDTRANS_CLIENT_KEY!;
-const IS_SANDBOX = process.env.MIDTRANS_IS_SANDBOX === "true" || MIDTRANS_SERVER_KEY?.startsWith("SB-");
+const MIDTRANS_SERVER_KEY = process.env.MIDTRANS_SERVER_KEY ?? "";
+const MIDTRANS_CLIENT_KEY = process.env.MIDTRANS_CLIENT_KEY ?? "";
+const IS_SANDBOX = process.env.MIDTRANS_IS_SANDBOX === "true" || MIDTRANS_SERVER_KEY.startsWith("SB-");
+
+/** Fail loudly (instead of silently building `Basic base64("undefined:")`) if keys are missing. */
+function assertMidtransConfigured() {
+  if (!MIDTRANS_SERVER_KEY) {
+    throw new Error("MIDTRANS_SERVER_KEY is not set — payment gateway is misconfigured");
+  }
+}
 const APP_URL = process.env.NEXTAUTH_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
 const SNAP_BASE_URL = IS_SANDBOX
@@ -45,6 +52,7 @@ export interface PremiumPaymentParams {
 export async function createConsultationTransaction(
   params: ConsultationPaymentParams
 ): Promise<SnapTransactionResult> {
+  assertMidtransConfigured();
   const body = {
     transaction_details: {
       order_id: params.orderId,
@@ -100,6 +108,7 @@ export async function createConsultationTransaction(
 export async function createPremiumTransaction(
   params: PremiumPaymentParams
 ): Promise<SnapTransactionResult> {
+  assertMidtransConfigured();
   const body = {
     transaction_details: {
       order_id: params.orderId,
@@ -156,6 +165,7 @@ export async function verifyWebhookSignature(
   grossAmount: string,
   signatureKey: string
 ): Promise<boolean> {
+  assertMidtransConfigured();
   const { createHash } = await import("crypto");
   const expected = createHash("sha512")
     .update(`${orderId}${statusCode}${grossAmount}${MIDTRANS_SERVER_KEY}`)
@@ -183,14 +193,8 @@ export async function handleMidtransWebhook(payload: {
     payload.signature_key
   );
 
-  if (!isValid) throw new Error("Invalid webhook signature");
-
-  const payment = await prisma.payment.findUnique({
-    where: { midtransOrderId: payload.order_id },
-    include: { consultation: true, user: true },
-  });
-
-  if (!payment) throw new Error("Payment not found");
+  // Bad signature is a final error — never retry.
+  if (!isValid) throw new PaymentFinalError("Invalid webhook signature");
 
   const isSettled =
     payload.transaction_status === "settlement" ||
@@ -198,61 +202,16 @@ export async function handleMidtransWebhook(payload: {
       payload.fraud_status === "accept");
 
   if (isSettled) {
-    await prisma.$transaction(async (tx) => {
-      await tx.payment.update({
-        where: { id: payment.id },
-        data: { status: "PAID", paidAt: new Date() },
-      });
-
-      if (payment.type === "CONSULTATION" && payment.consultationId) {
-        const consultation = await tx.consultation.update({
-          where: { id: payment.consultationId },
-          data: { status: "SCHEDULED", paidAt: new Date() },
-          select: { scheduledAt: true },
-        });
-
-        // Create chat room for the consultation
-        const chatRoom = await tx.chatRoom.create({ data: {} });
-        await tx.consultation.update({
-          where: { id: payment.consultationId },
-          data: { chatRoomId: chatRoom.id },
-        });
-
-        // Record quota usage — anchor 20-day window from scheduled date
-        const { recordConsultation } = await import("@/lib/quota-checker");
-        await recordConsultation(payment.userId, consultation.scheduledAt);
-      }
-
-      if (payment.type === "PREMIUM_SUBSCRIPTION") {
-        const planId = (payment.metadata as { planId?: string } | null)?.planId;
-        const monthsToAdd = planId === "quarterly" ? 3 : 1;
-
-        const expiresAt = new Date();
-        expiresAt.setMonth(expiresAt.getMonth() + monthsToAdd);
-
-        await tx.user.update({
-          where: { id: payment.userId },
-          data: { isPremium: true, premiumExpiresAt: expiresAt },
-        });
-      }
-    });
+    // Idempotent + verifies the amount matches what we charged.
+    await settlePayment(payload.order_id, { grossAmount: payload.gross_amount });
   } else if (
     payload.transaction_status === "cancel" ||
     payload.transaction_status === "expire" ||
     payload.transaction_status === "deny"
   ) {
-    await prisma.payment.update({
-      where: { id: payment.id },
-      data: { status: "CANCELLED" },
-    });
-
-    if (payment.consultationId) {
-      await prisma.consultation.update({
-        where: { id: payment.consultationId },
-        data: { status: "CANCELLED" },
-      });
-    }
+    await cancelPayment(payload.order_id);
   }
+  // Other statuses (pending, authorize, …) are acknowledged with no state change.
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

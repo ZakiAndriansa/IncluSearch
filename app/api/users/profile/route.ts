@@ -20,6 +20,17 @@ export async function PATCH(request: Request) {
     const updated = await prisma.user.update({
       where: { id: session.user.id },
       data,
+      // Never return the password hash (or any other sensitive column) to the client.
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        bio: true,
+        image: true,
+        role: true,
+        isPremium: true,
+      },
     });
 
     return NextResponse.json({ user: updated });

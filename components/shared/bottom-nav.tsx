@@ -9,7 +9,9 @@ import {
   MessageCircle,
   Users2,
   CalendarDays,
+  Star,
   Shield,
+  Wallet,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { UserRole } from "@prisma/client";
@@ -25,20 +27,23 @@ const PARENT_NAV: NavItem[] = [
   { href: "/", label: "Beranda", icon: LayoutDashboard, exact: true },
   { href: "/cari-pakar", label: "Pakar", icon: Users },
   { href: "/konsultasi", label: "Konsultasi", icon: MessageCircle },
+  { href: "/kalender", label: "Kalender", icon: CalendarDays },
   { href: "/knowledge-hub", label: "Ilmu", icon: BookOpen },
-  { href: "/forum", label: "Forum", icon: Users2 },
 ];
 
 const EXPERT_NAV: NavItem[] = [
   { href: "/", label: "Beranda", icon: LayoutDashboard, exact: true },
-  { href: "/konsultasi", label: "Jadwal", icon: CalendarDays },
+  { href: "/konsultasi", label: "Konsul", icon: MessageCircle },
+  { href: "/pakar/kalender", label: "Kalender", icon: CalendarDays },
+  { href: "/pakar/profil", label: "Profil", icon: Star },
   { href: "/knowledge-hub", label: "Ilmu", icon: BookOpen },
-  { href: "/forum", label: "Forum", icon: Users2 },
 ];
 
 const ADMIN_NAV: NavItem[] = [
   { href: "/", label: "Beranda", icon: LayoutDashboard, exact: true },
-  { href: "/admin", label: "Admin", icon: Shield },
+  { href: "/admin", label: "Admin", icon: Shield, exact: true },
+  { href: "/admin/keuangan", label: "Keuangan", icon: Wallet },
+  { href: "/admin/kalender", label: "Kalender", icon: CalendarDays },
   { href: "/knowledge-hub", label: "Ilmu", icon: BookOpen },
 ];
 

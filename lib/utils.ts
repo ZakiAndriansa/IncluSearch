@@ -57,7 +57,9 @@ export function slugify(text: string): string {
 
 export function generateOrderId(prefix: string = "ORD"): string {
   const timestamp = Date.now().toString(36).toUpperCase();
-  const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+  // crypto.randomUUID has far more entropy than Math.random — avoids order-id
+  // collisions (which would fail the unique constraint on midtransOrderId).
+  const random = crypto.randomUUID().replace(/-/g, "").slice(0, 8).toUpperCase();
   return `${prefix}-${timestamp}-${random}`;
 }
 

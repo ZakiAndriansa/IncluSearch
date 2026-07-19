@@ -5,9 +5,10 @@ import { formatDateTime, formatCurrency } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MessageCircle, Calendar, ArrowRight, Clock } from "lucide-react";
+import { MessageCircle, Calendar, ArrowRight, Clock, ClipboardList } from "lucide-react";
 import { getInitials } from "@/lib/utils";
 import { ConsultationRefresher } from "@/components/konsultasi/consultation-refresher";
+import { getChatAccess } from "@/lib/consultation";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Konsultasi Saya" };
@@ -20,15 +21,6 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   CANCELLED: { label: "Dibatalkan", color: "bg-red-100 text-red-600 border-red-200" },
   REFUNDED: { label: "Dikembalikan", color: "bg-sand-100 text-sand-500 border-sand-200" },
 };
-
-function isToday(date: Date) {
-  const now = new Date();
-  return (
-    now.getFullYear() === date.getFullYear() &&
-    now.getMonth() === date.getMonth() &&
-    now.getDate() === date.getDate()
-  );
-}
 
 export default async function KonsultasiPage() {
   const session = await auth();
@@ -50,6 +42,7 @@ export default async function KonsultasiPage() {
           payment: { select: { id: true, status: true } },
         },
         orderBy: { scheduledAt: "asc" },
+        take: 50, // bound the payload; add cursor pagination if lists grow past this
       })
     : await prisma.consultation.findMany({
         where: { parentId: session.user.id },
@@ -59,6 +52,7 @@ export default async function KonsultasiPage() {
           payment: { select: { id: true, status: true } },
         },
         orderBy: { scheduledAt: "desc" },
+        take: 50,
       });
 
   return (
@@ -111,10 +105,16 @@ export default async function KonsultasiPage() {
                 ? "SCHEDULED"
                 : c.status;
             const status = STATUS_LABELS[effectiveStatus];
-            const todayConsult = isToday(c.scheduledAt);
-            const canOpenChat =
-              c.chatRoomId &&
-              (c.status === "SCHEDULED" || c.status === "IN_PROGRESS");
+            const paid = c.payment?.status === "PAID";
+            // Chat access is gated by the scheduled window, not payment time.
+            const access = getChatAccess(effectiveStatus, c.scheduledAt, c.durationMins, paid);
+            const scheduledLabel = c.scheduledAt.toLocaleString("id-ID", {
+              weekday: "long",
+              day: "numeric",
+              month: "long",
+              hour: "2-digit",
+              minute: "2-digit",
+            });
 
             return (
               <div
@@ -158,9 +158,9 @@ export default async function KonsultasiPage() {
                   <span>{formatDateTime(c.scheduledAt)}</span>
                 </div>
 
-                {/* Expert: tampil info menunggu chat atau tombol buka chat */}
-                {isExpert && canOpenChat && (
-                  <div className="mt-3 pt-3 border-t border-sand-100">
+                {/* Chat access — gated by the scheduled window (lib/consultation) */}
+                <div className="mt-3 pt-3 border-t border-sand-100">
+                  {access === "open" && (
                     <Button
                       asChild
                       size="sm"
@@ -172,76 +172,64 @@ export default async function KonsultasiPage() {
                         <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
                       </Link>
                     </Button>
-                  </div>
-                )}
+                  )}
 
-                {isExpert && !canOpenChat && todayConsult && (
-                  <div className="mt-3 pt-3 border-t border-sand-100 flex items-center gap-2 text-xs text-teal-dark">
-                    <Clock className="w-3.5 h-3.5 shrink-0" />
-                    <span>Konsultasi hari ini — menunggu konfirmasi dari orangtua.</span>
-                  </div>
-                )}
+                  {access === "before" && (
+                    <div className="flex items-center gap-2 text-xs text-teal-dark">
+                      <Clock className="w-3.5 h-3.5 shrink-0" />
+                      <span>Ruang chat terbuka sesuai jadwal: {scheduledLabel} WIB</span>
+                    </div>
+                  )}
 
-                {isExpert && !canOpenChat && !todayConsult && (
-                  <div className="mt-3 pt-3 border-t border-sand-100 flex items-center gap-2 text-xs text-sand-400">
-                    <Clock className="w-3.5 h-3.5 shrink-0" />
-                    <span>Ruang chat terbuka pada hari konsultasi.</span>
-                  </div>
-                )}
-
-                {/* Parent: tombol aksi */}
-                {!isExpert && canOpenChat && (
-                  <div className="mt-3 pt-3 border-t border-sand-100">
+                  {access === "after" && (
                     <Button
                       asChild
                       size="sm"
-                      className="bg-forest-500 hover:bg-forest-600 text-white text-xs h-8"
+                      variant="outline"
+                      className="text-xs h-8 border-sand-300"
                     >
                       <Link href={`/konsultasi/${c.id}`}>
                         <MessageCircle className="w-3.5 h-3.5 mr-1.5" />
-                        Buka Ruang Chat
-                        <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+                        Lihat Riwayat Chat
                       </Link>
                     </Button>
-                  </div>
-                )}
+                  )}
 
-                {!isExpert && c.status === "PENDING_PAYMENT" && !c.chatRoomId && todayConsult && c.payment && (
-                  <div className="mt-3 pt-3 border-t border-sand-100">
-                    <Button
-                      asChild
-                      size="sm"
-                      className="bg-teal-600 hover:bg-teal-700 text-white text-xs h-8"
-                    >
-                      <Link href={`/konsultasi/${c.id}`}>
-                        <MessageCircle className="w-3.5 h-3.5 mr-1.5" />
-                        Masuk ke Konsultasi
-                        <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
-                      </Link>
-                    </Button>
-                  </div>
-                )}
-
-                {!isExpert && c.status === "PENDING_PAYMENT" && !todayConsult && c.payment?.status === "PAID" && (
-                  <div className="mt-3 pt-3 border-t border-sand-100 flex items-center gap-2 text-xs text-blue-600">
-                    <Calendar className="w-3.5 h-3.5 shrink-0" />
-                    <span>Pembayaran terkonfirmasi. Ruang chat terbuka pada hari konsultasi.</span>
-                  </div>
-                )}
-
-                {!isExpert && c.status === "PENDING_PAYMENT" && !todayConsult && c.payment?.status !== "PAID" && c.payment && (
-                  <div className="mt-3 pt-3 border-t border-sand-100">
+                  {access === "not_paid" && !isExpert && c.payment && (
                     <Button
                       asChild
                       size="sm"
                       className="bg-amber-500 hover:bg-amber-600 text-white text-xs h-8"
                     >
-                      <Link href={`/konsultasi/${c.id}/bayar`}>
-                        Lanjutkan Pembayaran
-                      </Link>
+                      <Link href={`/konsultasi/${c.id}/bayar`}>Lanjutkan Pembayaran</Link>
                     </Button>
-                  </div>
-                )}
+                  )}
+
+                  {access === "not_paid" && isExpert && (
+                    <div className="flex items-center gap-2 text-xs text-sand-400">
+                      <Clock className="w-3.5 h-3.5 shrink-0" />
+                      <span>Menunggu pembayaran dari orangtua.</span>
+                    </div>
+                  )}
+
+                  {access === "cancelled" && (
+                    <div className="flex items-center gap-2 text-xs text-sand-400">
+                      <span>Konsultasi dibatalkan.</span>
+                    </div>
+                  )}
+
+                  {/* Personal assessment — always reachable once paid, regardless
+                      of the chat window. */}
+                  {(access === "before" || access === "open" || access === "after") && (
+                    <Link
+                      href={`/konsultasi/${c.id}/asesmen-pribadi`}
+                      className="mt-2 inline-flex items-center gap-1.5 text-xs text-teal-dark hover:underline"
+                    >
+                      <ClipboardList className="w-3.5 h-3.5" />
+                      {isExpert ? "Isi Asesmen Pribadi" : "Lihat Asesmen Pribadi"}
+                    </Link>
+                  )}
+                </div>
               </div>
             );
           })}

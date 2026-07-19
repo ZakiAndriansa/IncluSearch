@@ -168,12 +168,21 @@ export default async function KnowledgeContentPage({
         </div>
       )}
 
-      {/* Article / Module content */}
+      {/* Article / Module content.
+          Expert-authored content (authorId set) is user-generated, so render it
+          as plain text — React escapes it, preventing stored XSS. Only trusted
+          seed/admin content (authorId null) is rendered as HTML. */}
       {content.content ? (
-        <div
-          className="prose prose-sm max-w-none prose-headings:text-forest-500 prose-headings:font-serif prose-a:text-teal-dark prose-strong:text-forest-500"
-          dangerouslySetInnerHTML={{ __html: content.content }}
-        />
+        content.authorId ? (
+          <div className="prose prose-sm max-w-none whitespace-pre-wrap text-forest-600">
+            {content.content}
+          </div>
+        ) : (
+          <div
+            className="prose prose-sm max-w-none prose-headings:text-forest-500 prose-headings:font-serif prose-a:text-teal-dark prose-strong:text-forest-500"
+            dangerouslySetInnerHTML={{ __html: content.content }}
+          />
+        )
       ) : content.type !== "VIDEO" ? (
         <div className="rounded-2xl border border-sand-200 bg-sand-50 p-8 text-center text-sand-400 text-sm">
           Konten sedang dalam persiapan.

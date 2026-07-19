@@ -1,11 +1,29 @@
 import Image from "next/image";
 import Link from "next/link";
+import { prisma } from "@/lib/prisma";
 
-export default function AuthLayout({
+export default async function AuthLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // Real figures from the database instead of hardcoded marketing numbers.
+  const [expertCount, familyCount, ratingAgg] = await Promise.all([
+    prisma.expertProfile.count({ where: { isVerified: true } }),
+    prisma.user.count({ where: { role: "PARENT" } }),
+    prisma.expertProfile.aggregate({
+      _avg: { rating: true },
+      where: { isVerified: true, totalReviews: { gt: 0 } },
+    }),
+  ]);
+  const avgRating = ratingAgg._avg.rating;
+
+  const stats = [
+    { label: "Pakar Terverifikasi", value: expertCount > 0 ? `${expertCount}` : "—" },
+    { label: "Keluarga Bergabung", value: familyCount > 0 ? `${familyCount}` : "—" },
+    { label: "Rating Kepuasan", value: avgRating ? `${avgRating.toFixed(1)}/5` : "—" },
+  ];
+
   return (
     <div className="min-h-screen grid lg:grid-cols-2">
       {/* Left panel — hero */}
@@ -46,11 +64,7 @@ export default function AuthLayout({
             </p>
 
             <div className="flex items-center gap-6 pt-4">
-              {[
-                { label: "Pakar Terverifikasi", value: "200+" },
-                { label: "Keluarga Terbantu", value: "5.000+" },
-                { label: "Rating Kepuasan", value: "4.9/5" },
-              ].map((stat) => (
+              {stats.map((stat) => (
                 <div key={stat.label} className="text-center">
                   <div className="text-2xl font-bold text-white">
                     {stat.value}

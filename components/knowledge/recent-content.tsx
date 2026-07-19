@@ -27,7 +27,7 @@ export async function RecentContent({ isPremium, limit = 3 }: RecentContentProps
   const contents = await prisma.knowledgeContent.findMany({
     where: {
       publishedAt: { not: null },
-      ...(isPremium ? {} : {}), // show all, lock premium ones in UI
+      // All published content is listed; premium items are locked in the UI.
     },
     orderBy: { publishedAt: "desc" },
     take: limit,

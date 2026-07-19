@@ -55,15 +55,16 @@ export default async function AssessmentDetailPage({
 
   if (!assessment) notFound();
 
-  // Compute matched experts
+  // Score the full pool of verified experts, THEN pick the top 4 — otherwise a
+  // perfect specialization match with a lower rating (ranked past the cap)
+  // would never be considered. Capped at 200 as a safety bound.
   const expertProfiles = await prisma.expertProfile.findMany({
     where: { isVerified: true, isAvailable: true },
     include: {
       user: { select: { name: true, image: true, email: true } },
       availabilitySlots: { where: { isActive: true } },
     },
-    orderBy: [{ rating: "desc" }, { totalReviews: "desc" }],
-    take: 20,
+    take: 200,
   });
 
   const matches = matchExperts(assessment, expertProfiles, 4);

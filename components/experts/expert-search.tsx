@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select";
 import { ExpertCard, type ExpertCardData } from "@/components/experts/expert-card";
 import { ExpertCardSkeleton } from "@/components/experts/expert-card-skeleton";
-import { matchExperts } from "@/lib/matching-algorithm";
+import { matchExperts, type ExpertWithProfile } from "@/lib/matching-algorithm";
 import { SPECIALIZATION_LABELS } from "@/lib/utils";
 import type { Assessment } from "@prisma/client";
 
@@ -73,17 +73,21 @@ export function ExpertSearch({
 
   const hasFilters = searchParams.q || searchParams.spec || searchParams.location || searchParams.sortBy;
 
-  // Compute match scores client-side if assessment exists
-  const experts: ExpertCardData[] = assessment
-    ? (() => {
-        const matches = matchExperts(assessment, initialExperts as any, initialExperts.length);
-        return matches.map((m) => ({
-          ...(m.expert as unknown as ExpertCardData),
-          matchScore: m.score,
-          matchReasons: m.reasons,
-        }));
-      })()
-    : initialExperts;
+  // Compute match scores client-side if an assessment exists. Memoized so it
+  // only recomputes when the assessment or the expert list actually changes.
+  const experts: ExpertCardData[] = useMemo(() => {
+    if (!assessment) return initialExperts;
+    const matches = matchExperts(
+      assessment,
+      initialExperts as unknown as ExpertWithProfile[],
+      initialExperts.length
+    );
+    return matches.map((m) => ({
+      ...(m.expert as unknown as ExpertCardData),
+      matchScore: m.score,
+      matchReasons: m.reasons,
+    }));
+  }, [assessment, initialExperts]);
 
   const above50 = experts.filter((e) => (e.matchScore ?? 101) >= 50);
   const below50 = experts.filter((e) => (e.matchScore ?? 101) < 50);

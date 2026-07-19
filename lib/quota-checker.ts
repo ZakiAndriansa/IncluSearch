@@ -1,5 +1,8 @@
 import { prisma } from "@/lib/prisma";
-import type { User, ConsultationQuota } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
+
+/** Either the global client or an interactive-transaction client. */
+type PrismaClientOrTx = typeof prisma | Prisma.TransactionClient;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
@@ -7,6 +10,10 @@ import type { User, ConsultationQuota } from "@prisma/client";
 
 export const FREE_QUOTA_WINDOW_DAYS = 20;
 const WINDOW_MS = FREE_QUOTA_WINDOW_DAYS * 24 * 60 * 60 * 1000;
+
+// How long an unpaid booking "holds" the quota. Matches the 24h Midtrans Snap
+// expiry: while a booking is awaiting payment, the user can't start another one.
+const PENDING_HOLD_MS = 24 * 60 * 60 * 1000;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -62,12 +69,36 @@ export async function checkConsultationQuota(
     };
   }
 
+  const now = new Date();
+
+  // Block a second booking while one is still awaiting payment — otherwise a
+  // free user could open several tabs, create multiple PENDING_PAYMENT
+  // consultations, and pay them all within one window.
+  const pending = await prisma.consultation.findFirst({
+    where: {
+      parentId: userId,
+      status: "PENDING_PAYMENT",
+      createdAt: { gte: new Date(now.getTime() - PENDING_HOLD_MS) },
+    },
+    select: { id: true },
+  });
+  if (pending) {
+    return {
+      allowed: false,
+      isPremium: false,
+      lastConsultationAt: null,
+      nextAvailableAt: null,
+      daysUntilReset: null,
+      hoursUntilReset: null,
+      message:
+        "Anda masih memiliki konsultasi yang menunggu pembayaran. Selesaikan atau batalkan dulu sebelum memesan lagi.",
+    };
+  }
+
   // Free user — check quota record
   const quota = await prisma.consultationQuota.findUnique({
     where: { userId },
   });
-
-  const now = new Date();
 
   // If no quota record, fall back to checking actual paid consultations
   let lastConsultationAt = quota?.lastConsultationAt ?? null;
@@ -132,12 +163,22 @@ export async function checkConsultationQuota(
 }
 
 /**
- * Record a completed consultation for a free user.
- * Called after a consultation is confirmed/paid.
- * Uses scheduledAt (the consultation date) as the anchor for the 20-day window.
+ * Record a consultation against a free user's quota.
+ * Called at settlement time (when the payment is confirmed).
+ *
+ * The 20-day window is anchored at `at` (defaults to now = settlement time),
+ * NOT at the future scheduled date — anchoring on a future date would make
+ * `now - lastConsultationAt` negative and over-block the user.
+ *
+ * Accepts an optional transaction client so it can run atomically inside the
+ * settlement transaction.
  */
-export async function recordConsultation(userId: string, scheduledAt?: Date): Promise<void> {
-  const user = await prisma.user.findUnique({
+export async function recordConsultation(
+  userId: string,
+  at: Date = new Date(),
+  client: PrismaClientOrTx = prisma
+): Promise<void> {
+  const user = await client.user.findUnique({
     where: { id: userId },
     select: { isPremium: true, premiumExpiresAt: true },
   });
@@ -151,18 +192,17 @@ export async function recordConsultation(userId: string, scheduledAt?: Date): Pr
 
   if (isPremium) return;
 
-  const anchor = scheduledAt ?? new Date();
-  const nextAvailableAt = new Date(anchor.getTime() + WINDOW_MS);
+  const nextAvailableAt = new Date(at.getTime() + WINDOW_MS);
 
-  await prisma.consultationQuota.upsert({
+  await client.consultationQuota.upsert({
     where: { userId },
     create: {
       userId,
-      lastConsultationAt: anchor,
+      lastConsultationAt: at,
       nextAvailableAt,
     },
     update: {
-      lastConsultationAt: anchor,
+      lastConsultationAt: at,
       nextAvailableAt,
     },
   });
@@ -184,27 +224,4 @@ export function formatQuotaCountdown(status: QuotaStatus): string {
   if (days > 0) return `${days} hari ${hours} jam`;
   if (hours > 0) return `${hours} jam`;
   return "Kurang dari 1 jam";
-}
-
-/**
- * Check if user can create a new assessment.
- * No hard limit — user can create many, but only 1 is active at a time.
- * Creating a new one automatically deactivates the previous active one.
- */
-export async function checkAssessmentLimit(userId: string): Promise<{
-  allowed: boolean;
-  currentCount: number;
-  maxAllowed: number;
-  message: string;
-}> {
-  const currentCount = await prisma.assessment.count({
-    where: { userId },
-  });
-
-  return {
-    allowed: true,
-    currentCount,
-    maxAllowed: Infinity,
-    message: "",
-  };
 }

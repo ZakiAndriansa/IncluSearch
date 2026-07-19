@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Bell, Crown, User, ClipboardList, ShieldCheck, LogOut } from "lucide-react";
+import { Crown, User, ClipboardList, ShieldCheck, LogOut, Menu } from "lucide-react";
+import { useNavSettings } from "@/components/shared/nav-settings";
 
 import { signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
@@ -30,20 +31,30 @@ interface NavbarProps {
 }
 
 export function Navbar({ user }: NavbarProps) {
+  const { setMobileOpen } = useNavSettings();
   return (
     <header className="sticky top-0 z-40 w-full border-b border-sand-200 bg-white/90 backdrop-blur-md h-14 flex">
       <div className="flex items-center justify-between w-full px-4 md:px-6">
-        {/* Logo */}
-        <Link href="/" className="flex items-center">
-          <Image
-            src="/logo.png"
-            alt="IncluSearch"
-            width={140}
-            height={48}
-            className="h-8 md:h-10 w-auto object-contain"
-            priority
-          />
-        </Link>
+        {/* Left: hamburger (mobile) + logo */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setMobileOpen(true)}
+            aria-label="Buka menu"
+            className="lg:hidden -ml-1 p-2 rounded-lg text-sand-600 hover:bg-sand-100 tap-target"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+          <Link href="/" className="flex items-center">
+            <Image
+              src="/logo.png"
+              alt="IncluSearch"
+              width={140}
+              height={48}
+              className="h-8 md:h-10 w-auto object-contain"
+              priority
+            />
+          </Link>
+        </div>
 
         {/* Right actions */}
         <div className="flex items-center gap-2 md:gap-3">
@@ -55,11 +66,8 @@ export function Navbar({ user }: NavbarProps) {
             </div>
           )}
 
-          {/* Notifications — hidden on mobile */}
-          <Button variant="ghost" size="icon" className="relative tap-target hidden sm:inline-flex">
-            <Bell className="w-5 h-5 text-sand-600" />
-            <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-olive-500" />
-          </Button>
+          {/* Notifications: removed until the feature exists — a permanent
+              "unread" dot on a dead button was misleading. */}
 
           {/* User menu */}
           <DropdownMenu>

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { z } from "zod";
 
 const RegisterSchema = z.object({
@@ -56,6 +57,11 @@ export async function POST(request: Request) {
         { error: err.errors[0].message },
         { status: 400 }
       );
+    }
+    // Unique-constraint violation (email) — covers the race between the
+    // findUnique check above and create(). Report as 409, not 500.
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+      return NextResponse.json({ error: "Email sudah terdaftar" }, { status: 409 });
     }
     console.error("[REGISTER]", err);
     return NextResponse.json(

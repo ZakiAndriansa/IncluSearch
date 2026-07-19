@@ -89,10 +89,11 @@ model User {
   sentMessages      ChatMessage[]
   bookmarks         Bookmark[]
   payments          Payment[]
+  knowledgeContents KnowledgeContent[]
+  reviews           ExpertReview[]
 
-  @@index([email])
+  // NOTE: no @@index([email]) — the @unique on email already creates a btree.
   @@index([role])
-  @@index([isPremium])
 }
 
 // ─────────────────────────────────────────────
@@ -144,8 +145,12 @@ model ExpertProfile {
   consultations    Consultation[]       @relation("ExpertConsultations")
   matchScores      MatchScore[]
   reviews          ExpertReview[]
+  personalAssessments PersonalAssessment[]
+  payouts          Payout[]
 
-  @@index([isAvailable])
+  // Hot path: expert listing/search filters isVerified + isAvailable and sorts
+  // by rating. This composite serves the filter and the sort in one index.
+  @@index([isVerified, isAvailable, rating])
   @@index([rating])
   @@index([locationType])
 }
@@ -171,10 +176,14 @@ model ExpertReview {
   rating       Int           // 1-5
   comment      String?       @db.Text
   createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 
   expert       ExpertProfile @relation(fields: [expertId], references: [id], onDelete: Cascade)
+  reviewer     User          @relation(fields: [reviewerId], references: [id], onDelete: Cascade)
 
-  @@index([expertId])
+  @@unique([expertId, reviewerId]) // one review per user per expert
+  @@index([expertId, createdAt])
+  @@index([reviewerId])
 }
 
 // ─────────────────────────────────────────────
@@ -214,6 +223,7 @@ model Assessment {
   // Relations
   user             User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   matchScores      MatchScore[]
+  personalAssessments PersonalAssessment[]
 
   @@index([userId])
   @@index([isActive])
@@ -270,11 +280,14 @@ model Consultation {
   expert         ExpertProfile      @relation("ExpertConsultations", fields: [expertId], references: [id])
   chatRoom       ChatRoom?          @relation(fields: [chatRoomId], references: [id])
   payment        Payment?
+  personalAssessment PersonalAssessment?
 
-  @@index([parentId])
-  @@index([expertId])
+  // Composites match the real access patterns (parent history, expert agenda,
+  // pending-booking guard) — they subsume the old single-column indexes.
+  @@index([parentId, scheduledAt])
+  @@index([expertId, scheduledAt])
+  @@index([parentId, status])
   @@index([status])
-  @@index([scheduledAt])
 }
 
 // ─────────────────────────────────────────────
@@ -288,8 +301,7 @@ model ChatRoom {
   // Relations
   consultation  Consultation?
   messages      ChatMessage[]
-
-  @@index([id])
+  // NOTE: no @@index([id]) — the primary key already provides it.
 }
 
 enum MessageType {
@@ -352,18 +364,59 @@ model KnowledgeContent {
   readTimeMins Int?
   viewCount    Int             @default(0)
   publishedAt  DateTime?
+  authorId     String?         // set when an expert authors the content
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
 
   // Relations
   bookmarks    Bookmark[]
+  author       User?           @relation(fields: [authorId], references: [id], onDelete: SetNull)
 
+  // NOTE: no @@index([slug]) — the @unique on slug already creates a btree.
   @@index([type])
   @@index([category])
-  @@index([isPremium])
-  @@index([slug])
   @@index([publishedAt])
   @@index([publishedAt, isPremium])
+  @@index([authorId])
+}
+
+// ─────────────────────────────────────────────
+// PERSONAL ASSESSMENT (expert essay, completes the parent's initial assessment)
+// ─────────────────────────────────────────────
+
+enum PersonalAssessmentStatus {
+  DRAFT
+  SUBMITTED
+}
+
+model PersonalAssessment {
+  id             String                   @id @default(cuid())
+  consultationId String                   @unique
+  expertId       String
+  assessmentId   String?
+  status         PersonalAssessmentStatus @default(DRAFT)
+
+  // 3 sections × 3 questions (Kelebihan / Kekurangan / Kebutuhan)
+  cognitiveStrength   String? @db.Text
+  cognitiveWeakness   String? @db.Text
+  cognitiveNeed       String? @db.Text
+  socialStrength      String? @db.Text
+  socialWeakness      String? @db.Text
+  socialNeed          String? @db.Text
+  psychomotorStrength String? @db.Text
+  psychomotorWeakness String? @db.Text
+  psychomotorNeed     String? @db.Text
+
+  submittedAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  consultation   Consultation  @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+  expert         ExpertProfile @relation(fields: [expertId], references: [id], onDelete: Cascade)
+  assessment     Assessment?   @relation(fields: [assessmentId], references: [id], onDelete: SetNull)
+
+  @@index([expertId])
+  @@index([assessmentId])
 }
 
 model Bookmark {
@@ -451,6 +504,23 @@ model MatchScore {
 }
 
 // ─────────────────────────────────────────────
+// EXPERT PAYOUTS (manual settlement records)
+// ─────────────────────────────────────────────
+
+model Payout {
+  id        String        @id @default(cuid())
+  expertId  String
+  amount    Int           // net amount paid to the expert, in IDR
+  method    String?       // e.g. "Transfer Bank"
+  note      String?
+  createdAt DateTime      @default(now())
+
+  expert    ExpertProfile @relation(fields: [expertId], references: [id], onDelete: Cascade)
+
+  @@index([expertId, createdAt])
+}
+
+// ─────────────────────────────────────────────
 // PAYMENTS (Midtrans)
 // ─────────────────────────────────────────────
 
@@ -487,7 +557,7 @@ model Payment {
   user             User          @relation(fields: [userId], references: [id])
   consultation     Consultation? @relation(fields: [consultationId], references: [id])
 
-  @@index([userId])
+  // NOTE: no @@index([midtransOrderId]) — the @unique already creates a btree.
+  @@index([userId, type, createdAt])
   @@index([status])
-  @@index([midtransOrderId])
 }

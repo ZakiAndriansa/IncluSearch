@@ -15,6 +15,9 @@ const CreateConsultationSchema = z.object({
   durationMins: z.number().int().min(30).max(120).default(60),
 });
 
+/** Thrown inside the create transaction when an unpaid booking already exists. */
+class PendingBookingError extends Error {}
+
 export async function POST(request: Request) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -22,6 +25,14 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const data = CreateConsultationSchema.parse(body);
+
+    // Booking must be for a future slot.
+    if (new Date(data.scheduledAt).getTime() <= Date.now()) {
+      return NextResponse.json(
+        { error: "Waktu konsultasi harus di masa depan" },
+        { status: 400 }
+      );
+    }
 
     // Check quota for free users
     const quota = await checkConsultationQuota(session.user.id);
@@ -47,6 +58,19 @@ export async function POST(request: Request) {
 
     // Create consultation + payment in transaction
     const { consultation, payment } = await prisma.$transaction(async (tx) => {
+      // Defensive re-check inside the transaction to narrow the booking race.
+      const outstanding = await tx.consultation.findFirst({
+        where: {
+          parentId: session.user.id,
+          status: "PENDING_PAYMENT",
+          createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+        },
+        select: { id: true },
+      });
+      if (outstanding) {
+        throw new PendingBookingError();
+      }
+
       const consultation = await tx.consultation.create({
         data: {
           parentId: session.user.id,
@@ -107,6 +131,12 @@ export async function POST(request: Request) {
     if (err instanceof z.ZodError) {
       return NextResponse.json({ error: err.errors[0].message }, { status: 400 });
     }
+    if (err instanceof PendingBookingError) {
+      return NextResponse.json(
+        { error: "Anda masih memiliki konsultasi yang menunggu pembayaran." },
+        { status: 409 }
+      );
+    }
     console.error("[CONSULTATION CREATE]", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
@@ -116,15 +146,27 @@ export async function GET(request: Request) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const consultations = await prisma.consultation.findMany({
-    where: { parentId: session.user.id },
-    include: {
-      expert: {
-        include: { user: { select: { name: true, image: true } } },
-      },
-    },
-    orderBy: { scheduledAt: "desc" },
-  });
+  const { searchParams } = new URL(request.url);
+  const page = Math.max(1, parseInt(searchParams.get("page") ?? "1") || 1);
+  const perPage = Math.min(50, Math.max(1, parseInt(searchParams.get("perPage") ?? "20") || 20));
 
-  return NextResponse.json({ consultations });
+  const [consultations, total] = await Promise.all([
+    prisma.consultation.findMany({
+      where: { parentId: session.user.id },
+      include: {
+        expert: {
+          include: { user: { select: { name: true, image: true } } },
+        },
+      },
+      orderBy: { scheduledAt: "desc" },
+      skip: (page - 1) * perPage,
+      take: perPage,
+    }),
+    prisma.consultation.count({ where: { parentId: session.user.id } }),
+  ]);
+
+  return NextResponse.json({
+    consultations,
+    pagination: { page, perPage, total, totalPages: Math.ceil(total / perPage) },
+  });
 }

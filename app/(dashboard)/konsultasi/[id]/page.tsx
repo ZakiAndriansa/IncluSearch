@@ -2,11 +2,13 @@ import { notFound, redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getTransactionStatus } from "@/lib/payments";
+import { settlePayment } from "@/lib/settlement";
+import { getChatAccess } from "@/lib/consultation";
 import { ChatRoom } from "@/components/consultation/chat-room";
 import { ConsultationHeader } from "@/components/consultation/consultation-header";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ClipboardList } from "lucide-react";
+import { ClipboardList, Video } from "lucide-react";
 import { CHALLENGE_TYPE_LABELS } from "@/lib/utils";
 import type { Metadata } from "next";
 
@@ -107,25 +109,8 @@ export default async function ConsultationRoomPage({
         midtransStatus?.fraud_status === "accept");
 
     if (isSettled) {
-      const updatedConsultation = await prisma.consultation.update({
-        where: { id: consultation.id },
-        data: { status: "SCHEDULED", paidAt: new Date() },
-        select: { scheduledAt: true },
-      });
-      await prisma.payment.update({
-        where: { midtransOrderId: returnOrderId },
-        data: { status: "PAID", paidAt: new Date() },
-      });
-      if (!consultation.chatRoom) {
-        const chatRoom = await prisma.chatRoom.create({ data: {} });
-        await prisma.consultation.update({
-          where: { id: consultation.id },
-          data: { chatRoomId: chatRoom.id },
-        });
-      }
-      const { recordConsultation } = await import("@/lib/quota-checker");
-      await recordConsultation(consultation.parentId, updatedConsultation.scheduledAt);
-      // Re-fetch updated consultation
+      // Idempotent + transactional; also runs from the webhook and /sync.
+      await settlePayment(returnOrderId);
       redirect(`/konsultasi/${params.id}`);
     }
   }
@@ -147,45 +132,109 @@ export default async function ConsultationRoomPage({
     }
   }
 
-  // Auto-activate chat room if: today is consultation day, payment confirmed, no chatRoom yet
-  if (!consultation.chatRoom) {
-    const isPaid = consultation.payment?.status === "PAID";
-    const scheduledDate = new Date(consultation.scheduledAt);
-    const today = new Date();
-    const isToday =
-      today.getFullYear() === scheduledDate.getFullYear() &&
-      today.getMonth() === scheduledDate.getMonth() &&
-      today.getDate() === scheduledDate.getDate();
+  // Chat room only opens during the scheduled date+time window — NOT at payment
+  // time. This gate is the single authority (mirrored by the messages API).
+  const isPaid = consultation.payment?.status === "PAID";
+  const access = getChatAccess(
+    consultation.status,
+    consultation.scheduledAt,
+    consultation.durationMins,
+    isPaid
+  );
 
-    if (isPaid && isToday) {
-      const chatRoom = await prisma.chatRoom.create({ data: {} });
-      await prisma.consultation.update({
-        where: { id: consultation.id },
-        data: { chatRoomId: chatRoom.id },
-      });
-      redirect(`/konsultasi/${consultation.id}`);
-    }
+  const scheduledLabel = new Date(consultation.scheduledAt).toLocaleString("id-ID", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
+  if (access === "not_paid") {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="text-center">
-          <div className="text-4xl mb-3">{isPaid ? "📅" : "⏳"}</div>
+        <div className="text-center max-w-sm">
+          <div className="text-4xl mb-3">⏳</div>
           <h3 className="font-semibold text-forest-500 mb-2">
-            {isPaid ? "Ruang Chat Belum Tersedia" : "Menunggu Konfirmasi Pembayaran"}
+            Menunggu Konfirmasi Pembayaran
           </h3>
           <p className="text-sand-500 text-sm">
-            {isPaid
-              ? `Ruang chat akan terbuka pada hari konsultasi (${scheduledDate.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}).`
-              : "Ruang chat akan tersedia setelah pembayaran dikonfirmasi."}
+            Ruang chat akan tersedia setelah pembayaran dikonfirmasi.
           </p>
         </div>
       </div>
     );
   }
 
+  if (access === "cancelled") {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center max-w-sm">
+          <div className="text-4xl mb-3">🚫</div>
+          <h3 className="font-semibold text-forest-500 mb-2">Konsultasi Dibatalkan</h3>
+          <p className="text-sand-500 text-sm">
+            Ruang chat tidak tersedia karena konsultasi ini dibatalkan.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (access === "before") {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center max-w-sm">
+          <div className="text-4xl mb-3">📅</div>
+          <h3 className="font-semibold text-forest-500 mb-2">Ruang Chat Belum Dibuka</h3>
+          <p className="text-sand-500 text-sm">
+            Pembayaran Anda sudah terkonfirmasi. Ruang chat akan terbuka otomatis
+            sesuai jadwal:
+          </p>
+          <p className="text-forest-500 font-medium text-sm mt-2">{scheduledLabel} WIB</p>
+          <Button asChild variant="outline" className="mt-5 border-sand-300">
+            <Link href={`/konsultasi/${consultation.id}/asesmen-pribadi`}>
+              <ClipboardList className="w-4 h-4 mr-2" />
+              {isParent ? "Lihat Asesmen Pribadi" : "Isi Asesmen Pribadi"}
+            </Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // access === "open" | "after" — ensure a room exists (defensive lazy create
+  // for older paid consultations that never got one).
+  if (!consultation.chatRoom) {
+    const chatRoom = await prisma.chatRoom.create({ data: {} });
+    await prisma.consultation.update({
+      where: { id: consultation.id },
+      data: { chatRoomId: chatRoom.id },
+    });
+    redirect(`/konsultasi/${consultation.id}`);
+  }
+
   return (
     <div className="h-[calc(100vh-8.5rem)] lg:h-[calc(100vh-7.5rem)] flex flex-col max-w-3xl mx-auto">
       <ConsultationHeader consultation={consultation} currentUserId={session.user.id} />
+      <div className="flex flex-col sm:flex-row gap-2">
+        <Link
+          href={`/konsultasi/${consultation.id}/asesmen-pribadi`}
+          className="flex-1 flex items-center gap-2 rounded-xl border border-forest-200 bg-forest-50/50 px-4 py-2.5 text-sm text-forest-600 hover:bg-forest-50 transition-colors"
+        >
+          <ClipboardList className="w-4 h-4" />
+          {isParent ? "Lihat Asesmen Pribadi dari pakar" : "Isi / Perbarui Asesmen Pribadi anak"}
+        </Link>
+        {access === "open" && (
+          <Link
+            href={`/konsultasi/${consultation.id}/vc`}
+            className="flex items-center justify-center gap-2 rounded-xl border border-teal-dark/30 bg-teal-dark/5 px-4 py-2.5 text-sm text-teal-dark hover:bg-teal-dark/10 transition-colors"
+          >
+            <Video className="w-4 h-4" />
+            Mulai Video Call
+          </Link>
+        )}
+      </div>
       {!isParent && parentAssessment && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-start gap-3 text-sm">
           <ClipboardList className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />

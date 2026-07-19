@@ -3,11 +3,23 @@ import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
+// Seed passwords come from env so they aren't a fixed, guessable value in the
+// repo. Defaults are for local development only.
+const SEED_ADMIN_PASSWORD = process.env.SEED_ADMIN_PASSWORD ?? "Admin@123456";
+const SEED_EXPERT_PASSWORD = process.env.SEED_EXPERT_PASSWORD ?? "Expert@123456";
+
 async function main() {
+  // Guard against seeding a real database with known credentials.
+  if (process.env.NODE_ENV === "production" && process.env.ALLOW_PROD_SEED !== "true") {
+    throw new Error(
+      "Refusing to seed in production. Set ALLOW_PROD_SEED=true to override."
+    );
+  }
+
   console.log("🌱 Seeding database...");
 
   // Admin user
-  const adminPassword = await bcrypt.hash("Admin@123456", 12);
+  const adminPassword = await bcrypt.hash(SEED_ADMIN_PASSWORD, 12);
   const admin = await prisma.user.upsert({
     where: { email: "admin@ortoconnect.id" },
     update: {},
@@ -78,7 +90,7 @@ async function main() {
   ];
 
   for (const expert of expertData) {
-    const password = await bcrypt.hash("Expert@123456", 12);
+    const password = await bcrypt.hash(SEED_EXPERT_PASSWORD, 12);
     const user = await prisma.user.upsert({
       where: { email: expert.email },
       update: {},
@@ -254,8 +266,9 @@ async function main() {
 
   console.log("✅ Seeding completed!");
   console.log("─────────────────────────────────");
-  console.log("Admin:    admin@ortoconnect.id / Admin@123456");
-  console.log("Expert 1: siti.rahayu@ortoconnect.id / Expert@123456");
+  console.log("Admin:    admin@ortoconnect.id");
+  console.log("Expert 1: siti.rahayu@ortoconnect.id");
+  console.log("Passwords: SEED_ADMIN_PASSWORD / SEED_EXPERT_PASSWORD (or dev defaults)");
   console.log("─────────────────────────────────");
 }
 // test

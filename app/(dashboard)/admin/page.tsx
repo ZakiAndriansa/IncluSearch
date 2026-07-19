@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { formatDate } from "@/lib/utils";
+import { formatDate, getInitials } from "@/lib/utils";
 import {
   Users,
   BookOpen,
@@ -9,8 +9,24 @@ import {
   MessageCircle,
   TrendingUp,
   Shield,
+  BadgeCheck,
+  Wallet,
+  CalendarDays,
+  ClipboardList,
+  PenLine,
+  ChevronRight,
 } from "lucide-react";
+import Link from "next/link";
+import { VerifyExpertButton } from "@/components/admin/verify-expert-button";
 import type { Metadata } from "next";
+
+const ADMIN_LINKS = [
+  { href: "/admin/keuangan", label: "Keuangan", desc: "Laba & potongan pakar", icon: Wallet },
+  { href: "/admin/kalender", label: "Kalender Booking", desc: "Semua sesi & status pakar", icon: CalendarDays },
+  { href: "/admin/asesmen", label: "Database Asesmen", desc: "Asesmen awal & pakar", icon: ClipboardList },
+  { href: "/admin/pakar", label: "Akun Pakar", desc: "Kelola & verifikasi", icon: Users },
+  { href: "/knowledge-hub/tulis", label: "Tulis Artikel", desc: "Input Knowledge Hub", icon: PenLine },
+];
 
 export const metadata: Metadata = { title: "Panel Admin" };
 
@@ -26,6 +42,7 @@ export default async function AdminPage() {
     totalContent,
     totalCommunities,
     recentUsers,
+    experts,
   ] = await Promise.all([
     prisma.user.count(),
     prisma.user.count({ where: { isPremium: true } }),
@@ -43,6 +60,16 @@ export default async function AdminPage() {
         role: true,
         isPremium: true,
         createdAt: true,
+      },
+    }),
+    prisma.expertProfile.findMany({
+      orderBy: [{ isVerified: "asc" }, { createdAt: "desc" }],
+      take: 50,
+      select: {
+        id: true,
+        isVerified: true,
+        city: true,
+        user: { select: { name: true, email: true } },
       },
     }),
   ]);
@@ -123,6 +150,71 @@ export default async function AdminPage() {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Quick links */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {ADMIN_LINKS.map((l) => (
+          <Link
+            key={l.href}
+            href={l.href}
+            className="bg-white rounded-2xl border border-sand-200 hover:border-forest-300 transition-colors p-4 flex items-center gap-3"
+          >
+            <div className="w-10 h-10 rounded-xl bg-forest-50 flex items-center justify-center flex-shrink-0">
+              <l.icon className="w-5 h-5 text-forest-500" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-semibold text-forest-500">{l.label}</div>
+              <div className="text-xs text-sand-400">{l.desc}</div>
+            </div>
+            <ChevronRight className="w-4 h-4 text-sand-300 flex-shrink-0" />
+          </Link>
+        ))}
+      </div>
+
+      {/* Expert verification */}
+      <div className="bg-white rounded-2xl border border-sand-200 overflow-hidden">
+        <div className="px-5 py-4 border-b border-sand-100 flex items-center gap-2">
+          <BadgeCheck className="w-4 h-4 text-teal-dark" />
+          <h2 className="font-semibold text-forest-500">Verifikasi Pakar</h2>
+        </div>
+        {experts.length === 0 ? (
+          <p className="px-5 py-6 text-sm text-sand-400">Belum ada profil pakar.</p>
+        ) : (
+          <div className="divide-y divide-sand-100">
+            {experts.map((e) => (
+              <div
+                key={e.id}
+                className="px-5 py-3 flex flex-wrap items-center justify-between gap-2"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-9 h-9 rounded-full bg-forest-100 flex items-center justify-center text-forest-500 text-sm font-semibold flex-shrink-0">
+                    {getInitials(e.user.name ?? "P")}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium text-forest-500 truncate">
+                      {e.user.name ?? "-"}
+                      {e.city ? <span className="text-sand-400 font-normal"> · {e.city}</span> : null}
+                    </div>
+                    <div className="text-xs text-sand-400 truncate">{e.user.email}</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <span
+                    className={`text-[11px] px-2 py-0.5 rounded-full border ${
+                      e.isVerified
+                        ? "bg-teal-dark/5 text-teal-dark border-teal-dark/20"
+                        : "bg-amber-50 text-amber-600 border-amber-200"
+                    }`}
+                  >
+                    {e.isVerified ? "Terverifikasi" : "Menunggu"}
+                  </span>
+                  <VerifyExpertButton expertId={e.id} isVerified={e.isVerified} />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Recent users */}
