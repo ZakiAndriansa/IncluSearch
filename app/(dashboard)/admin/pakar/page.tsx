@@ -1,44 +1,68 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Plus, Pencil } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { Button } from "@/components/ui/button";
 import { formatCurrency, formatDate, getInitials, SPECIALIZATION_LABELS } from "@/lib/utils";
 import { VerifyExpertButton } from "@/components/admin/verify-expert-button";
+import { Pagination } from "@/components/shared/pagination";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Database Akun Pakar" };
 
-export default async function AdminExpertsPage() {
+const PER_PAGE = 10;
+
+export default async function AdminExpertsPage({
+  searchParams,
+}: {
+  searchParams: { page?: string };
+}) {
   const session = await auth();
   if (!session || session.user.role !== "ADMIN") redirect("/");
 
-  const experts = await prisma.expertProfile.findMany({
-    orderBy: [{ isVerified: "asc" }, { createdAt: "desc" }],
-    take: 200,
-    select: {
-      id: true,
-      isVerified: true,
-      isAvailable: true,
-      hourlyRate: true,
-      specializations: true,
-      city: true,
-      province: true,
-      createdAt: true,
-      user: { select: { name: true, email: true, phone: true } },
-      _count: { select: { consultations: true } },
-    },
-  });
+  const page = Math.max(1, parseInt(searchParams.page ?? "1") || 1);
 
-  const verified = experts.filter((e) => e.isVerified).length;
+  const [experts, total, verified] = await Promise.all([
+    prisma.expertProfile.findMany({
+      orderBy: [{ isVerified: "asc" }, { createdAt: "desc" }],
+      skip: (page - 1) * PER_PAGE,
+      take: PER_PAGE,
+      select: {
+        id: true,
+        isVerified: true,
+        isAvailable: true,
+        hourlyRate: true,
+        specializations: true,
+        city: true,
+        province: true,
+        createdAt: true,
+        user: { select: { name: true, email: true, phone: true } },
+        _count: { select: { consultations: true } },
+      },
+    }),
+    prisma.expertProfile.count(),
+    prisma.expertProfile.count({ where: { isVerified: true } }),
+  ]);
+
+  const totalPages = Math.ceil(total / PER_PAGE);
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
+      <div className="flex items-start justify-between gap-3">
       <div>
         <h1 className="text-xl sm:text-2xl font-serif font-bold text-forest-500">
           Database Akun Pakar
         </h1>
         <p className="text-sand-500 text-sm mt-1">
-          {experts.length} akun pakar · {verified} terverifikasi. Halaman ini hanya untuk admin.
+          {total} akun pakar · {verified} terverifikasi. Halaman ini hanya untuk admin.
         </p>
+      </div>
+        <Button asChild className="bg-forest-500 hover:bg-forest-600 text-white flex-shrink-0">
+          <Link href="/admin/pakar/baru">
+            <Plus className="w-4 h-4 mr-1.5" /> Tambah Pakar
+          </Link>
+        </Button>
       </div>
 
       {experts.length === 0 ? (
@@ -74,7 +98,15 @@ export default async function AdminExpertsPage() {
                   >
                     {e.isVerified ? "Terverifikasi" : "Menunggu"}
                   </span>
-                  <VerifyExpertButton expertId={e.id} isVerified={e.isVerified} />
+                  <div className="flex items-center gap-2">
+                    <Link
+                      href={`/admin/pakar/${e.id}`}
+                      className="inline-flex items-center gap-1 text-xs font-medium rounded-lg px-2.5 py-1 border border-sand-300 text-sand-600 hover:bg-sand-50"
+                    >
+                      <Pencil className="w-3.5 h-3.5" /> Edit
+                    </Link>
+                    <VerifyExpertButton expertId={e.id} isVerified={e.isVerified} />
+                  </div>
                 </div>
               </div>
 
@@ -100,6 +132,8 @@ export default async function AdminExpertsPage() {
           ))}
         </div>
       )}
+
+      <Pagination basePath="/admin/pakar" page={page} totalPages={totalPages} />
     </div>
   );
 }

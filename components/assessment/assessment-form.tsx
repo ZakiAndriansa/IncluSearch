@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
+import { FileUpload } from "@/components/shared/file-upload";
 import { CHALLENGE_TYPE_LABELS } from "@/lib/utils";
 
 const LEARNING_ENV_LABELS: Record<string, string> = {
@@ -53,6 +54,8 @@ export function AssessmentForm({ onClose }: AssessmentFormProps) {
     learningEnv: "",
     locationPref: "ONLINE",
     goals: [] as string[],
+    documentUrl: "",
+    documentName: "",
   });
 
   function toggleGoal(goal: string) {
@@ -79,6 +82,8 @@ export function AssessmentForm({ onClose }: AssessmentFormProps) {
         body: JSON.stringify({
           ...form,
           childAge: parseInt(form.childAge),
+          documentUrl: form.documentUrl || null,
+          documentName: form.documentName || null,
         }),
       });
 
@@ -236,6 +241,27 @@ export function AssessmentForm({ onClose }: AssessmentFormProps) {
               </button>
             ))}
           </div>
+        </div>
+
+        {/* Dokumen pendukung (PDF) */}
+        <div className="space-y-2">
+          <Label className="text-forest-500 font-medium text-sm">
+            Dokumen Pendukung (PDF, opsional)
+          </Label>
+          <FileUpload
+            accept="application/pdf"
+            folder="assessments"
+            label={form.documentName ? "Ganti PDF" : "Unggah PDF"}
+            currentUrl={form.documentUrl || null}
+            onUploaded={(url, name) =>
+              setForm((f) => ({ ...f, documentUrl: url, documentName: name }))
+            }
+            onClear={() => setForm((f) => ({ ...f, documentUrl: "", documentName: "" }))}
+            maxSizeMB={20}
+          />
+          {form.documentName && (
+            <p className="text-xs text-sand-500">Terlampir: {form.documentName}</p>
+          )}
         </div>
 
         <div className="flex gap-3 pt-2">

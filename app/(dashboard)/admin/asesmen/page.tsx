@@ -2,19 +2,30 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { formatDate, CHALLENGE_TYPE_LABELS } from "@/lib/utils";
+import { Pagination } from "@/components/shared/pagination";
 import { ClipboardList, FileText } from "lucide-react";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Database Asesmen" };
 
-export default async function AdminAssessmentsPage() {
+const PER_PAGE = 10;
+
+export default async function AdminAssessmentsPage({
+  searchParams,
+}: {
+  searchParams: { pa?: string; pp?: string };
+}) {
   const session = await auth();
   if (!session || session.user.role !== "ADMIN") redirect("/");
 
-  const [initial, personal] = await Promise.all([
+  const pa = Math.max(1, parseInt(searchParams.pa ?? "1") || 1); // page: asesmen awal
+  const pp = Math.max(1, parseInt(searchParams.pp ?? "1") || 1); // page: asesmen pribadi
+
+  const [initial, initialTotal, personal, personalTotal] = await Promise.all([
     prisma.assessment.findMany({
       orderBy: { createdAt: "desc" },
-      take: 100,
+      skip: (pa - 1) * PER_PAGE,
+      take: PER_PAGE,
       select: {
         id: true,
         childName: true,
@@ -25,9 +36,11 @@ export default async function AdminAssessmentsPage() {
         user: { select: { name: true, email: true } },
       },
     }),
+    prisma.assessment.count(),
     prisma.personalAssessment.findMany({
       orderBy: { createdAt: "desc" },
-      take: 100,
+      skip: (pp - 1) * PER_PAGE,
+      take: PER_PAGE,
       select: {
         id: true,
         status: true,
@@ -37,6 +50,7 @@ export default async function AdminAssessmentsPage() {
         consultation: { select: { parent: { select: { name: true } } } },
       },
     }),
+    prisma.personalAssessment.count(),
   ]);
 
   return (
@@ -55,7 +69,7 @@ export default async function AdminAssessmentsPage() {
         <div className="px-5 py-4 border-b border-sand-100 flex items-center gap-2">
           <FileText className="w-4 h-4 text-forest-500" />
           <h2 className="font-semibold text-forest-500">Asesmen Awal (Orang Tua)</h2>
-          <span className="text-xs text-sand-400">· {initial.length}</span>
+          <span className="text-xs text-sand-400">· {initialTotal}</span>
         </div>
         {initial.length === 0 ? (
           <p className="px-5 py-6 text-sm text-sand-400">Belum ada asesmen.</p>
@@ -80,13 +94,19 @@ export default async function AdminAssessmentsPage() {
           </div>
         )}
       </div>
+      <Pagination
+        basePath="/admin/asesmen"
+        page={pa}
+        totalPages={Math.ceil(initialTotal / PER_PAGE)}
+        query={{ pp: String(pp) }}
+      />
 
       {/* Asesmen pribadi / ahli */}
       <div className="bg-white rounded-2xl border border-sand-200 overflow-hidden">
         <div className="px-5 py-4 border-b border-sand-100 flex items-center gap-2">
           <ClipboardList className="w-4 h-4 text-teal-dark" />
           <h2 className="font-semibold text-forest-500">Asesmen Pribadi (Pakar)</h2>
-          <span className="text-xs text-sand-400">· {personal.length}</span>
+          <span className="text-xs text-sand-400">· {personalTotal}</span>
         </div>
         {personal.length === 0 ? (
           <p className="px-5 py-6 text-sm text-sand-400">Belum ada asesmen pribadi.</p>
@@ -119,6 +139,12 @@ export default async function AdminAssessmentsPage() {
           </div>
         )}
       </div>
+      <Pagination
+        basePath="/admin/asesmen"
+        page={pp}
+        totalPages={Math.ceil(personalTotal / PER_PAGE)}
+        query={{ pa: String(pa) }}
+      />
     </div>
   );
 }

@@ -4,9 +4,14 @@ import { prisma } from "@/lib/prisma";
 import { formatDate, CATEGORY_LABELS } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Clock, Eye, Crown, FileText, Video, BookOpen } from "lucide-react";
+import { ArrowLeft, Clock, Eye, Crown, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import {
+  CONTENT_TYPE_ICON as TYPE_ICON,
+  CONTENT_TYPE_LABEL as TYPE_LABEL,
+  CONTENT_TYPE_COLOR as TYPE_COLOR,
+} from "@/lib/knowledge";
 import type { Metadata } from "next";
 
 export async function generateMetadata({
@@ -25,13 +30,6 @@ export async function generateMetadata({
   };
 }
 
-const TYPE_LABEL = { ARTICLE: "Artikel", VIDEO: "Video", MODULE: "Modul" };
-const TYPE_ICON = { ARTICLE: FileText, VIDEO: Video, MODULE: BookOpen };
-const TYPE_COLOR = {
-  ARTICLE: "text-forest-500 bg-forest-50 border-forest-100",
-  VIDEO: "text-teal-dark bg-teal-dark/5 border-teal-dark/20",
-  MODULE: "text-olive-500 bg-olive-50 border-olive-100",
-};
 
 export default async function KnowledgeContentPage({
   params,
@@ -101,13 +99,11 @@ export default async function KnowledgeContentPage({
       {/* Thumbnail */}
       {content.thumbnailUrl && (
         <div className="relative h-56 rounded-2xl overflow-hidden bg-sand-100">
-          <Image
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
             src={content.thumbnailUrl}
             alt={content.title}
-            fill
-            className="object-cover"
-            sizes="(max-width: 768px) 100vw, 768px"
-            priority
+            className="absolute inset-0 w-full h-full object-cover"
           />
         </div>
       )}
@@ -156,38 +152,57 @@ export default async function KnowledgeContentPage({
 
       <hr className="border-sand-200" />
 
-      {/* Video embed */}
+      {/* Video: embed (YouTube/Vimeo) or uploaded file */}
       {content.type === "VIDEO" && content.videoUrl && (
-        <div className="rounded-2xl overflow-hidden bg-black aspect-video">
-          <iframe
-            src={content.videoUrl}
-            className="w-full h-full"
-            allowFullScreen
-            title={content.title}
-          />
-        </div>
-      )}
-
-      {/* Article / Module content.
-          Expert-authored content (authorId set) is user-generated, so render it
-          as plain text — React escapes it, preventing stored XSS. Only trusted
-          seed/admin content (authorId null) is rendered as HTML. */}
-      {content.content ? (
-        content.authorId ? (
-          <div className="prose prose-sm max-w-none whitespace-pre-wrap text-forest-600">
-            {content.content}
+        /(youtube\.com|youtu\.be|vimeo\.com)/.test(content.videoUrl) ? (
+          <div className="rounded-2xl overflow-hidden bg-black aspect-video">
+            <iframe src={content.videoUrl} className="w-full h-full" allowFullScreen title={content.title} />
           </div>
         ) : (
-          <div
-            className="prose prose-sm max-w-none prose-headings:text-forest-500 prose-headings:font-serif prose-a:text-teal-dark prose-strong:text-forest-500"
-            dangerouslySetInnerHTML={{ __html: content.content }}
-          />
+          // eslint-disable-next-line jsx-a11y/media-has-caption
+          <video src={content.videoUrl} controls className="w-full rounded-2xl bg-black" />
         )
-      ) : content.type !== "VIDEO" ? (
-        <div className="rounded-2xl border border-sand-200 bg-sand-50 p-8 text-center text-sand-400 text-sm">
-          Konten sedang dalam persiapan.
-        </div>
-      ) : null}
+      )}
+
+      {/* Photo */}
+      {content.type === "PHOTO" && content.fileUrl && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={content.fileUrl} alt={content.title} className="w-full rounded-2xl border border-sand-200" />
+      )}
+
+      {/* External link */}
+      {content.type === "LINK" && content.externalUrl && (
+        <a
+          href={content.externalUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 rounded-xl bg-forest-500 hover:bg-forest-600 text-white text-sm font-medium px-4 py-2.5"
+        >
+          <ExternalLink className="w-4 h-4" /> Buka Tautan
+        </a>
+      )}
+
+      {/* Article / Module text.
+          Expert-authored content (authorId set) is rendered as plain text —
+          React escapes it, preventing stored XSS. Trusted seed/admin content
+          (authorId null) may be HTML. */}
+      {(content.type === "ARTICLE" || content.type === "MODULE") &&
+        (content.content ? (
+          content.authorId ? (
+            <div className="prose prose-sm max-w-none whitespace-pre-wrap text-forest-600">
+              {content.content}
+            </div>
+          ) : (
+            <div
+              className="prose prose-sm max-w-none prose-headings:text-forest-500 prose-headings:font-serif prose-a:text-teal-dark prose-strong:text-forest-500"
+              dangerouslySetInnerHTML={{ __html: content.content }}
+            />
+          )
+        ) : (
+          <div className="rounded-2xl border border-sand-200 bg-sand-50 p-8 text-center text-sand-400 text-sm">
+            Konten sedang dalam persiapan.
+          </div>
+        ))}
     </div>
   );
 }

@@ -31,6 +31,7 @@ import {
   CHALLENGE_TYPE_LABELS,
 } from "@/lib/utils";
 import { AssessmentForm } from "@/components/assessment/assessment-form";
+import { FileUpload } from "@/components/shared/file-upload";
 import { PREMIUM_PLANS as PLAN_CONFIG } from "@/lib/plans";
 import type { Assessment, ConsultationQuota, UserRole } from "@prisma/client";
 
@@ -270,6 +271,21 @@ export function ProfileTabs({
                   {getInitials(user.name ?? user.email ?? "U")}
                 </AvatarFallback>
               </Avatar>
+              <FileUpload
+                accept="image/*"
+                folder="avatars"
+                label="Ubah Foto"
+                onUploaded={async (url) => {
+                  await fetch("/api/users/profile", {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ image: url }),
+                  });
+                  await updateSession(); // refresh JWT so navbar/sidebar avatar updates
+                  router.refresh();
+                }}
+                maxSizeMB={5}
+              />
               <div>
                 <div className="font-semibold text-forest-500 text-base">
                   {user.name ?? "Pengguna"}

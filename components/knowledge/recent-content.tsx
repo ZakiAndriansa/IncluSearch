@@ -1,27 +1,19 @@
 import Link from "next/link";
 import Image from "next/image";
-import { BookOpen, Video, FileText, Lock, LockOpen } from "lucide-react";
+import { Lock, LockOpen } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Badge } from "@/components/ui/badge";
 import { LockedContentLink } from "@/components/knowledge/locked-content-link";
 import { CATEGORY_LABELS } from "@/lib/utils";
+import {
+  CONTENT_TYPE_ICON as TYPE_ICON,
+  CONTENT_TYPE_LABEL as TYPE_LABEL,
+} from "@/lib/knowledge";
 
 interface RecentContentProps {
   isPremium: boolean;
   limit?: number;
 }
-
-const TYPE_ICON = {
-  ARTICLE: FileText,
-  VIDEO: Video,
-  MODULE: BookOpen,
-};
-
-const TYPE_LABEL = {
-  ARTICLE: "Artikel",
-  VIDEO: "Video",
-  MODULE: "Modul",
-};
 
 export async function RecentContent({ isPremium, limit = 3 }: RecentContentProps) {
   const contents = await prisma.knowledgeContent.findMany({
@@ -63,11 +55,11 @@ export async function RecentContent({ isPremium, limit = 3 }: RecentContentProps
             {/* Thumbnail */}
             <div className="w-14 h-14 rounded-lg bg-sand-100 flex-shrink-0 overflow-hidden relative">
               {content.thumbnailUrl ? (
-                <Image
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
                   src={content.thumbnailUrl}
                   alt={content.title}
-                  fill
-                  className="object-cover"
+                  className="absolute inset-0 w-full h-full object-cover"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">

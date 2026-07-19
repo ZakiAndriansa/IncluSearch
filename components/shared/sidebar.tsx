@@ -30,6 +30,7 @@ interface NavItem {
   label: string;
   icon: React.ElementType;
   exact?: boolean;
+  children?: NavItem[];
 }
 
 const PARENT_NAV: NavItem[] = [
@@ -53,11 +54,19 @@ const EXPERT_NAV: NavItem[] = [
 
 const ADMIN_NAV: NavItem[] = [
   { href: "/", label: "Beranda", icon: LayoutDashboard, exact: true },
-  { href: "/admin", label: "Panel Admin", icon: Shield, exact: true },
+  {
+    href: "/admin",
+    label: "Panel Admin",
+    icon: Shield,
+    exact: true,
+    children: [
+      { href: "/admin/pakar", label: "Pakar", icon: Users },
+      { href: "/admin/orang-tua", label: "Orang Tua", icon: Users2 },
+    ],
+  },
   { href: "/admin/keuangan", label: "Keuangan", icon: Wallet },
   { href: "/admin/kalender", label: "Kalender", icon: CalendarDays },
   { href: "/admin/asesmen", label: "Asesmen", icon: ClipboardList },
-  { href: "/admin/pakar", label: "Pakar", icon: Users },
   { href: "/knowledge-hub", label: "Knowledge Hub", icon: BookOpen },
 ];
 
@@ -159,22 +168,48 @@ export function Sidebar({ user }: SidebarProps) {
           {navItems.map((item) => {
             const active = isActive(item.href, item.exact);
             return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={closeMobile}
-                title={collapsed ? item.label : undefined}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all tap-target border-2 border-transparent",
-                  collapsed && "lg:justify-center",
-                  active ? th.active : cn(th.navText, th.navHover)
+              <div key={item.href} className="space-y-1">
+                <Link
+                  href={item.href}
+                  onClick={closeMobile}
+                  title={collapsed ? item.label : undefined}
+                  className={cn(
+                    "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all tap-target border-2 border-transparent",
+                    collapsed && "lg:justify-center",
+                    active ? th.active : cn(th.navText, th.navHover)
+                  )}
+                >
+                  <item.icon
+                    className={cn("w-5 h-5 flex-shrink-0", active ? th.activeIcon : th.navIcon)}
+                  />
+                  <span className={cn(collapsed && "lg:hidden")}>{item.label}</span>
+                </Link>
+
+                {/* Sub-menu (hidden on collapsed rail) */}
+                {item.children && !collapsed && (
+                  <div className={cn("ml-4 pl-3 border-l space-y-1", th.divider)}>
+                    {item.children.map((child) => {
+                      const cActive = isActive(child.href, child.exact);
+                      return (
+                        <Link
+                          key={child.href}
+                          href={child.href}
+                          onClick={closeMobile}
+                          className={cn(
+                            "flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all border-2 border-transparent",
+                            cActive ? th.active : cn(th.navText, th.navHover)
+                          )}
+                        >
+                          <child.icon
+                            className={cn("w-4 h-4 flex-shrink-0", cActive ? th.activeIcon : th.navIcon)}
+                          />
+                          {child.label}
+                        </Link>
+                      );
+                    })}
+                  </div>
                 )}
-              >
-                <item.icon
-                  className={cn("w-5 h-5 flex-shrink-0", active ? th.activeIcon : th.navIcon)}
-                />
-                <span className={cn(collapsed && "lg:hidden")}>{item.label}</span>
-              </Link>
+              </div>
             );
           })}
         </nav>

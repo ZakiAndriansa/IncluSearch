@@ -216,6 +216,8 @@ model Assessment {
   learningEnv      LearningEnvironment
   goals            String[]
   locationPref     LocationType        @default(ONLINE)
+  documentUrl      String?             // optional supporting PDF uploaded by the parent
+  documentName     String?
   isActive         Boolean             @default(true)
   createdAt        DateTime            @default(now())
   updatedAt        DateTime            @updatedAt
@@ -333,9 +335,11 @@ model ChatMessage {
 // ─────────────────────────────────────────────
 
 enum ContentType {
-  ARTICLE
-  VIDEO
+  ARTICLE // tulisan biasa (text)
+  VIDEO   // file video (upload)
   MODULE
+  LINK    // tautan ke sumber eksternal
+  PHOTO   // file foto (upload)
 }
 
 enum ContentCategory {
@@ -357,8 +361,10 @@ model KnowledgeContent {
   type         ContentType
   category     ContentCategory
   isPremium    Boolean         @default(false)
-  videoUrl     String?
+  videoUrl     String?         // uploaded video (VIDEO) or embed URL
   thumbnailUrl String?
+  externalUrl  String?         // target link (LINK)
+  fileUrl      String?         // uploaded photo (PHOTO) / generic file
   ageRangeMin  Int?
   ageRangeMax  Int?
   readTimeMins Int?

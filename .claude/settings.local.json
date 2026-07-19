@@ -65,7 +65,12 @@
       "Bash(tee /tmp/tsctheme.txt)",
       "Bash(tee /tmp/tsctheme2.txt)",
       "Bash(tee /tmp/tscresp.txt)",
-      "Bash(tee /tmp/tscpayout.txt)"
+      "Bash(tee /tmp/tscpayout.txt)",
+      "Bash(tee /tmp/tscu0.txt)",
+      "Bash(tee /tmp/tscu1.txt)",
+      "Bash(tee /tmp/tscu2.txt)",
+      "Bash(tee /tmp/tscu4.txt)",
+      "Bash(tee /tmp/tscu3.txt)"
     ]
   }
 }

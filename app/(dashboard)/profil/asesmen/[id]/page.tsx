@@ -188,6 +188,20 @@ export default async function AssessmentDetailPage({
             </div>
           )}
 
+          {assessment.documentUrl && (
+            <div className="bg-white rounded-xl border border-sand-200 p-4">
+              <div className="text-sm font-semibold text-forest-500 mb-2">Dokumen Pendukung</div>
+              <a
+                href={assessment.documentUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-sm text-teal-dark hover:underline"
+              >
+                📄 {assessment.documentName ?? "Lihat dokumen (PDF)"}
+              </a>
+            </div>
+          )}
+
           {/* Matched experts */}
           <div>
             <div className="flex items-center justify-between mb-4">

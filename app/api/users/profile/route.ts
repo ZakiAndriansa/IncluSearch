@@ -7,6 +7,7 @@ const UpdateSchema = z.object({
   name: z.string().min(2).optional(),
   phone: z.string().optional(),
   bio: z.string().max(500).optional(),
+  image: z.string().max(2000).optional().nullable(),
 });
 
 export async function PATCH(request: Request) {

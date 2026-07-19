@@ -6,6 +6,7 @@ import { formatDate } from "@/lib/utils";
 import { checkConsultationQuota } from "@/lib/quota-checker";
 import { ChevronLeft, ChevronRight, CalendarCheck, Lock, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { CalendarDay } from "@/components/shared/calendar-day";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Kalender Konsultasi" };
@@ -172,50 +173,31 @@ export default async function ParentCalendarPage({
             const dayBookings = byDay.get(day) ?? [];
             const isTodayCell = sameDay(today, dayDate);
             const locked = isLocked(day) && dayBookings.length === 0;
+            const sessions = dayBookings.map((c) => ({
+              id: c.id,
+              time: new Date(c.scheduledAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }),
+              title: c.expert.user.name ?? "Pakar",
+              subtitle: c.status === "COMPLETED" ? "Selesai" : c.status === "PENDING_PAYMENT" ? "Menunggu pembayaran" : "Terjadwal",
+            }));
             return (
-              <div
+              <CalendarDay
                 key={day}
-                className={`min-h-[60px] rounded-lg border p-1.5 text-left ${
-                  isTodayCell
-                    ? "border-forest-500 border-2"
-                    : locked
-                    ? "border-sand-200 bg-sand-100/70"
-                    : "border-sand-200"
-                }`}
-              >
-                {isTodayCell ? (
-                  <span
-                    // Style lama (disimpan, tidak dihapus sesuai permintaan):
-                    // className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-forest-500 text-white text-xs font-bold"
-                    className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-forest-500 text-white border-2 border-forest-500 text-xs font-bold"
-                  >
-                    {day}
-                  </span>
-                ) : (
-                  <span className={`text-xs font-medium ${locked ? "text-sand-400" : "text-sand-600"}`}>
-                    {day}
-                  </span>
-                )}
-                {dayBookings.length > 0 && (
-                  <div className="mt-1 text-[10px] font-semibold rounded px-1 py-0.5 bg-teal-dark text-white truncate">
-                    Konsultasi
-                  </div>
-                )}
-                {locked && dayBookings.length === 0 && (
-                  <Lock className="w-3 h-3 text-sand-400 mt-1" />
-                )}
-              </div>
+                day={day}
+                isToday={isTodayCell}
+                sessions={sessions}
+                locked={locked}
+                dateLabel={`${day} ${MONTHS_ID[month]}`}
+              />
             );
           })}
         </div>
 
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-4 text-[11px] text-sand-500">
           <span className="inline-flex items-center gap-1.5">
-            <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-white border-2 border-forest-500" />
-            Hari ini
+            <span className="w-4 h-4 rounded-full bg-forest-500" /> Hari ini
           </span>
           <span className="inline-flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded bg-teal-dark" /> Ada konsultasi
+            <span className="w-3 h-3 rounded bg-teal-dark" /> Ada konsultasi — klik untuk detail
           </span>
           <span className="inline-flex items-center gap-1.5">
             <Lock className="w-3 h-3 text-sand-400" /> Terkunci (kuota 20 hari)

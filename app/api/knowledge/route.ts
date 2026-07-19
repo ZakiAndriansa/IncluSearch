@@ -45,25 +45,38 @@ export async function GET(request: Request) {
   return NextResponse.json({ contents, total, page, perPage });
 }
 
-const ContentSchema = z.object({
-  title: z.string().min(4).max(160),
-  excerpt: z.string().max(400).optional().nullable(),
-  content: z.string().min(20),
-  type: z.enum(["ARTICLE", "VIDEO", "MODULE"]),
-  category: z.enum([
-    "LEARNING_DIFFICULTIES",
-    "BEHAVIORAL_SUPPORT",
-    "COMMUNICATION_DISORDERS",
-    "SENSORY_PROCESSING",
-    "PARENTING_TIPS",
-    "EXPERT_GUIDES",
-    "CASE_STUDIES",
-  ]),
-  isPremium: z.boolean().optional().default(false),
-  thumbnailUrl: z.string().url().optional().nullable(),
-  videoUrl: z.string().url().optional().nullable(),
-  readTimeMins: z.number().int().min(1).max(600).optional().nullable(),
-});
+const ContentSchema = z
+  .object({
+    title: z.string().min(4).max(160),
+    excerpt: z.string().max(400).optional().nullable(),
+    content: z.string().optional().nullable(),
+    type: z.enum(["ARTICLE", "VIDEO", "MODULE", "LINK", "PHOTO"]),
+    category: z.enum([
+      "LEARNING_DIFFICULTIES",
+      "BEHAVIORAL_SUPPORT",
+      "COMMUNICATION_DISORDERS",
+      "SENSORY_PROCESSING",
+      "PARENTING_TIPS",
+      "EXPERT_GUIDES",
+      "CASE_STUDIES",
+    ]),
+    isPremium: z.boolean().optional().default(false),
+    thumbnailUrl: z.string().max(2000).optional().nullable(),
+    videoUrl: z.string().max(2000).optional().nullable(),
+    externalUrl: z.string().url().optional().nullable(),
+    fileUrl: z.string().max(2000).optional().nullable(),
+    readTimeMins: z.number().int().min(1).max(600).optional().nullable(),
+  })
+  // Each type requires its own primary field.
+  .superRefine((d, ctx) => {
+    const need = (ok: boolean, path: string, msg: string) => {
+      if (!ok) ctx.addIssue({ code: z.ZodIssueCode.custom, path: [path], message: msg });
+    };
+    if (d.type === "ARTICLE" || d.type === "MODULE") need(!!d.content && d.content.length >= 20, "content", "Isi artikel minimal 20 karakter");
+    if (d.type === "LINK") need(!!d.externalUrl, "externalUrl", "Tautan wajib diisi");
+    if (d.type === "VIDEO") need(!!d.videoUrl, "videoUrl", "File video wajib diunggah");
+    if (d.type === "PHOTO") need(!!d.fileUrl, "fileUrl", "File foto wajib diunggah");
+  });
 
 // POST — a verified expert authors content that publishes immediately.
 export async function POST(request: Request) {

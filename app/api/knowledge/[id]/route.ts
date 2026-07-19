@@ -19,7 +19,7 @@ const UpdateSchema = z.object({
     ])
     .optional(),
   isPremium: z.boolean().optional(),
-  thumbnailUrl: z.string().url().optional().nullable(),
+  thumbnailUrl: z.string().max(2000).optional().nullable(),
   readTimeMins: z.number().int().min(1).max(600).optional().nullable(),
 });
 

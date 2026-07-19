@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ChevronLeft, ChevronRight, CalendarDays, LayoutList } from "lucide-react";
+import { CalendarDay } from "@/components/shared/calendar-day";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Kalender Booking" };
@@ -180,26 +181,20 @@ export default async function AdminCalendarPage({
               if (day === null) return <div key={`e-${i}`} />;
               const dayConsults = byDay.get(day) ?? [];
               const isToday = isCurrentMonth && today.getDate() === day;
+              const sessions = dayConsults.map((c) => ({
+                id: c.id,
+                time: new Date(c.scheduledAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }),
+                title: c.expert.user.name ?? "Pakar",
+                subtitle: `${c.parent.name ?? "Ortu"} · ${c.durationMins} menit`,
+              }));
               return (
-                <div
+                <CalendarDay
                   key={day}
-                  className={`min-h-[64px] rounded-lg border p-1.5 text-left ${
-                    isToday ? "border-forest-500 border-2" : "border-sand-200"
-                  }`}
-                >
-                  {isToday ? (
-                    <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-forest-500 text-white border-2 border-forest-500 text-xs font-bold">
-                      {day}
-                    </span>
-                  ) : (
-                    <span className="text-xs font-medium text-sand-600">{day}</span>
-                  )}
-                  {dayConsults.length > 0 && (
-                    <div className="mt-1 text-[10px] font-semibold rounded px-1 py-0.5 bg-teal-dark text-white truncate">
-                      {dayConsults.length} sesi
-                    </div>
-                  )}
-                </div>
+                  day={day}
+                  isToday={isToday}
+                  sessions={sessions}
+                  dateLabel={`${day} ${MONTHS_ID[month]}`}
+                />
               );
             })}
           </div>

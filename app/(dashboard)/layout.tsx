@@ -17,7 +17,7 @@ export default async function DashboardLayout({
   // Always read isPremium from DB — JWT can be stale after webhook updates
   const dbUser = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { isPremium: true, premiumExpiresAt: true },
+    select: { isPremium: true, premiumExpiresAt: true, name: true, image: true },
   });
 
   const isPremium =
@@ -26,6 +26,11 @@ export default async function DashboardLayout({
 
   const user = {
     ...session.user,
+    // Read name/photo from DB so navbar & sidebar avatars update immediately
+    // after an upload (router.refresh re-runs this layout) without waiting for
+    // the JWT/session to refresh.
+    name: dbUser?.name ?? session.user.name,
+    image: dbUser?.image ?? session.user.image,
     isPremium,
     premiumExpiresAt: dbUser?.premiumExpiresAt ?? null,
   };

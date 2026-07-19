@@ -15,6 +15,7 @@ import {
   ClipboardList,
   PenLine,
   ChevronRight,
+  Users2,
 } from "lucide-react";
 import Link from "next/link";
 import { VerifyExpertButton } from "@/components/admin/verify-expert-button";
@@ -25,6 +26,7 @@ const ADMIN_LINKS = [
   { href: "/admin/kalender", label: "Kalender Booking", desc: "Semua sesi & status pakar", icon: CalendarDays },
   { href: "/admin/asesmen", label: "Database Asesmen", desc: "Asesmen awal & pakar", icon: ClipboardList },
   { href: "/admin/pakar", label: "Akun Pakar", desc: "Kelola & verifikasi", icon: Users },
+  { href: "/admin/orang-tua", label: "Akun Orang Tua", desc: "Database orang tua", icon: Users2 },
   { href: "/knowledge-hub/tulis", label: "Tulis Artikel", desc: "Input Knowledge Hub", icon: PenLine },
 ];
 
@@ -41,7 +43,7 @@ export default async function AdminPage() {
     totalConsultations,
     totalContent,
     totalCommunities,
-    recentUsers,
+    parents,
     experts,
   ] = await Promise.all([
     prisma.user.count(),
@@ -51,20 +53,20 @@ export default async function AdminPage() {
     prisma.knowledgeContent.count(),
     prisma.community.count({ where: { isActive: true } }),
     prisma.user.findMany({
+      where: { role: "PARENT" },
       orderBy: { createdAt: "desc" },
-      take: 10,
+      take: 5,
       select: {
         id: true,
         name: true,
         email: true,
-        role: true,
         isPremium: true,
         createdAt: true,
       },
     }),
     prisma.expertProfile.findMany({
       orderBy: [{ isVerified: "asc" }, { createdAt: "desc" }],
-      take: 50,
+      take: 5,
       select: {
         id: true,
         isVerified: true,
@@ -172,11 +174,16 @@ export default async function AdminPage() {
         ))}
       </div>
 
-      {/* Expert verification */}
+      {/* Pakar (5 terbaru) */}
       <div className="bg-white rounded-2xl border border-sand-200 overflow-hidden">
-        <div className="px-5 py-4 border-b border-sand-100 flex items-center gap-2">
-          <BadgeCheck className="w-4 h-4 text-teal-dark" />
-          <h2 className="font-semibold text-forest-500">Verifikasi Pakar</h2>
+        <div className="px-5 py-4 border-b border-sand-100 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <BadgeCheck className="w-4 h-4 text-teal-dark" />
+            <h2 className="font-semibold text-forest-500">Pakar</h2>
+          </div>
+          <Link href="/admin/pakar" className="text-xs text-teal-dark hover:underline font-medium">
+            Selengkapnya →
+          </Link>
         </div>
         {experts.length === 0 ? (
           <p className="px-5 py-6 text-sm text-sand-400">Belum ada profil pakar.</p>
@@ -217,49 +224,47 @@ export default async function AdminPage() {
         )}
       </div>
 
-      {/* Recent users */}
+      {/* Orang Tua (5 terbaru) */}
       <div className="bg-white rounded-2xl border border-sand-200 overflow-hidden">
-        <div className="px-5 py-4 border-b border-sand-100">
-          <h2 className="font-semibold text-forest-500">
-            Pengguna Terbaru
-          </h2>
+        <div className="px-5 py-4 border-b border-sand-100 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Users className="w-4 h-4 text-forest-500" />
+            <h2 className="font-semibold text-forest-500">Orang Tua</h2>
+          </div>
+          <Link href="/admin/orang-tua" className="text-xs text-teal-dark hover:underline font-medium">
+            Selengkapnya →
+          </Link>
         </div>
-        <div className="divide-y divide-sand-100">
-          {recentUsers.map((user) => (
-            <div
-              key={user.id}
-              className="px-5 py-3 flex flex-wrap items-start sm:items-center justify-between gap-2"
-            >
-              <div className="min-w-0">
-                <div className="text-sm font-medium text-forest-500 truncate">
-                  {user.name ?? "-"}
+        {parents.length === 0 ? (
+          <p className="px-5 py-6 text-sm text-sand-400">Belum ada akun orang tua.</p>
+        ) : (
+          <div className="divide-y divide-sand-100">
+            {parents.map((p) => (
+              <div
+                key={p.id}
+                className="px-5 py-3 flex flex-wrap items-center justify-between gap-2"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-9 h-9 rounded-full bg-forest-100 flex items-center justify-center text-forest-500 text-sm font-semibold flex-shrink-0">
+                    {getInitials(p.name ?? p.email ?? "U")}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium text-forest-500 truncate">{p.name ?? "-"}</div>
+                    <div className="text-xs text-sand-400 truncate">{p.email}</div>
+                  </div>
                 </div>
-                <div className="text-xs text-sand-400 truncate">{user.email}</div>
+                <div className="flex items-center gap-2 text-xs flex-shrink-0">
+                  {p.isPremium && (
+                    <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-600 border border-amber-200">
+                      Premium
+                    </span>
+                  )}
+                  <span className="text-sand-400 hidden sm:inline">{formatDate(p.createdAt)}</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2 text-xs flex-shrink-0">
-                <span
-                  className={`px-2 py-0.5 rounded-full border ${
-                    user.role === "EXPERT"
-                      ? "bg-teal-dark/5 text-teal-dark border-teal-dark/20"
-                      : user.role === "ADMIN"
-                      ? "bg-forest-50 text-forest-500 border-forest-100"
-                      : "bg-sand-100 text-sand-600 border-sand-200"
-                  }`}
-                >
-                  {user.role}
-                </span>
-                {user.isPremium && (
-                  <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-600 border border-amber-200">
-                    Premium
-                  </span>
-                )}
-                <span className="text-sand-400 hidden sm:inline">
-                  {formatDate(user.createdAt)}
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

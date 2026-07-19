@@ -50,6 +50,8 @@ export default async function ExpertAssessmentsPage() {
       challengeType: true,
       challengeDetails: true,
       goals: true,
+      documentUrl: true,
+      documentName: true,
     },
   });
   const assessmentByParent = new Map(assessments.map((a) => [a.userId, a]));
@@ -98,6 +100,16 @@ export default async function ExpertAssessmentsPage() {
                         </div>
                         {a.challengeDetails && (
                           <div className="text-sand-400 line-clamp-2">{a.challengeDetails}</div>
+                        )}
+                        {a.documentUrl && (
+                          <a
+                            href={a.documentUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-teal-dark hover:underline"
+                          >
+                            📄 {a.documentName ?? "Dokumen PDF"}
+                          </a>
                         )}
                       </div>
                     ) : (

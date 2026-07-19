@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
+import { FileUpload } from "@/components/shared/file-upload";
 import { CHALLENGE_TYPE_LABELS } from "@/lib/utils";
 import type { Assessment, ChallengeType, LearningEnvironment, LocationType } from "@prisma/client";
 
@@ -52,6 +53,8 @@ export function AssessmentEditForm({ assessment }: { assessment: Assessment }) {
     learningEnv: assessment.learningEnv,
     locationPref: assessment.locationPref,
     goals: assessment.goals,
+    documentUrl: assessment.documentUrl ?? "",
+    documentName: assessment.documentName ?? "",
   });
 
   function toggleGoal(goal: string) {
@@ -75,7 +78,12 @@ export function AssessmentEditForm({ assessment }: { assessment: Assessment }) {
       const res = await fetch(`/api/assessments/${assessment.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, childAge: parseInt(form.childAge) }),
+        body: JSON.stringify({
+          ...form,
+          childAge: parseInt(form.childAge),
+          documentUrl: form.documentUrl || null,
+          documentName: form.documentName || null,
+        }),
       });
 
       if (!res.ok) {
@@ -223,6 +231,27 @@ export function AssessmentEditForm({ assessment }: { assessment: Assessment }) {
               </button>
             ))}
           </div>
+        </div>
+
+        {/* Dokumen pendukung (PDF) */}
+        <div className="space-y-2">
+          <Label className="text-forest-500 font-medium text-sm">
+            Dokumen Pendukung (PDF, opsional)
+          </Label>
+          <FileUpload
+            accept="application/pdf"
+            folder="assessments"
+            label={form.documentName ? "Ganti PDF" : "Unggah PDF"}
+            currentUrl={form.documentUrl || null}
+            onUploaded={(url, name) =>
+              setForm((f) => ({ ...f, documentUrl: url, documentName: name }))
+            }
+            onClear={() => setForm((f) => ({ ...f, documentUrl: "", documentName: "" }))}
+            maxSizeMB={20}
+          />
+          {form.documentName && (
+            <p className="text-xs text-sand-500">Terlampir: {form.documentName}</p>
+          )}
         </div>
 
         <div className="flex gap-3 pt-2">

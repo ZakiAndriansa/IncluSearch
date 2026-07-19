@@ -26,6 +26,7 @@ const ProfileSchema = z.object({
   province: z.string().max(120).optional().nullable(),
   locationType: z.enum(["ONLINE", "OFFLINE", "BOTH"]).optional(),
   specializations: z.array(z.enum(SPECIALIZATIONS)).max(10).optional(),
+  profilePhotoUrl: z.string().max(2000).optional().nullable(),
 });
 
 export async function GET() {
@@ -57,6 +58,14 @@ export async function PATCH(request: Request) {
       where: { userId: session.user.id },
       data,
     });
+
+    // Keep the account avatar in sync with the profile photo.
+    if (data.profilePhotoUrl !== undefined) {
+      await prisma.user.update({
+        where: { id: session.user.id },
+        data: { image: data.profilePhotoUrl },
+      });
+    }
 
     return NextResponse.json({ profile: updated });
   } catch (err) {

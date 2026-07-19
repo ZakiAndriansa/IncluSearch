@@ -17,6 +17,8 @@ export const assessmentSchema = z.object({
   learningEnv: z.enum(["HOME", "SCHOOL", "BOTH", "THERAPY_CENTER"]),
   locationPref: z.enum(["ONLINE", "OFFLINE", "BOTH"]).default("ONLINE"),
   goals: z.array(z.string()).default([]),
+  documentUrl: z.string().max(2000).optional().nullable(),
+  documentName: z.string().max(255).optional().nullable(),
 });
 
 // PATCH accepts any subset of the same fields.

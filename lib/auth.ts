@@ -58,17 +58,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.role = (user as { role?: UserRole }).role;
         token.isPremium = (user as { isPremium?: boolean }).isPremium;
       }
-      // Refresh user data on session update
-      if (trigger === "update" && session) {
+      // Refresh user data (incl. name & photo) on session update
+      if (trigger === "update") {
         const dbUser = await prisma.user.findUnique({
           where: { id: token.id as string },
-          select: { role: true, isPremium: true, premiumExpiresAt: true },
+          select: { role: true, isPremium: true, premiumExpiresAt: true, name: true, image: true },
         });
         if (dbUser) {
           token.role = dbUser.role;
           token.isPremium =
             dbUser.isPremium &&
             (!dbUser.premiumExpiresAt || dbUser.premiumExpiresAt > new Date());
+          token.name = dbUser.name;
+          token.picture = dbUser.image; // next-auth stores the avatar in `picture`
         }
       }
       return token;
@@ -78,6 +80,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.id = token.id as string;
         session.user.role = token.role as UserRole;
         session.user.isPremium = token.isPremium as boolean;
+        // Ensure the freshest name/photo reach the client.
+        session.user.name = (token.name as string | null) ?? session.user.name;
+        session.user.image = (token.picture as string | null) ?? session.user.image;
       }
       return session;
     },

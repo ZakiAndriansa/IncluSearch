@@ -6,6 +6,7 @@ import { getOrCreateExpertProfile } from "@/lib/expert";
 import { formatCurrency } from "@/lib/utils";
 import { getExpertBalance, expertPayout, PLATFORM_COMMISSION_RATE } from "@/lib/finance";
 import { ChevronLeft, ChevronRight, CalendarDays, Clock, Wallet, CheckCircle2, Hourglass } from "lucide-react";
+import { CalendarDay } from "@/components/shared/calendar-day";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Kalender & Gaji" };
@@ -188,36 +189,20 @@ export default async function ExpertCalendarPage({
             if (day === null) return <div key={`e-${i}`} />;
             const dayBookings = byDay.get(day) ?? [];
             const isToday = isCurrentMonth && today.getDate() === day;
+            const sessions = dayBookings.map((b) => ({
+              id: b.id,
+              time: new Date(b.scheduledAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }),
+              title: b.parent.name ?? "Orang tua",
+              subtitle: `${b.durationMins} menit · ${b.status === "COMPLETED" ? "Selesai" : "Terjadwal"}`,
+            }));
             return (
-              <div
+              <CalendarDay
                 key={day}
-                className={`min-h-[64px] rounded-lg border p-1.5 text-left ${
-                  isToday ? "border-forest-500 border-2" : "border-sand-200"
-                }`}
-              >
-                {isToday ? (
-                  <span
-                    // Style lama (disimpan, tidak dihapus sesuai permintaan):
-                    // className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-forest-500 text-white text-xs font-bold"
-                    className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-forest-500 text-white border-2 border-forest-500 text-xs font-bold"
-                  >
-                    {day}
-                  </span>
-                ) : (
-                  <span className="text-xs font-medium text-sand-600">{day}</span>
-                )}
-                {dayBookings.length > 0 && (
-                  <div
-                    className={`mt-1 text-[10px] font-semibold rounded px-1 py-0.5 truncate ${
-                      dayBookings.every((b) => b.status === "COMPLETED")
-                        ? "bg-sand-300 text-sand-700"
-                        : "bg-teal-dark text-white"
-                    }`}
-                  >
-                    {dayBookings.length} sesi
-                  </div>
-                )}
-              </div>
+                day={day}
+                isToday={isToday}
+                sessions={sessions}
+                dateLabel={`${day} ${MONTHS_ID[month]}`}
+              />
             );
           })}
         </div>
@@ -225,14 +210,10 @@ export default async function ExpertCalendarPage({
         {/* Legend */}
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-4 text-[11px] text-sand-500">
           <span className="inline-flex items-center gap-1.5">
-            <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-white border-2 border-forest-500" />
-            Hari ini
+            <span className="w-4 h-4 rounded-full bg-forest-500" /> Hari ini
           </span>
           <span className="inline-flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded bg-teal-dark" /> Terjadwal
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded bg-sand-300" /> Selesai
+            <span className="w-3 h-3 rounded bg-teal-dark" /> Ada sesi — klik untuk detail
           </span>
         </div>
       </div>

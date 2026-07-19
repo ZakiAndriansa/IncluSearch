@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { Loader2, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
+import { FileUpload } from "@/components/shared/file-upload";
 import { SPECIALIZATION_LABELS } from "@/lib/utils";
 import { DAY_LABELS } from "@/lib/expert";
 
@@ -27,6 +29,7 @@ interface ExpertProfileFormProps {
     province: string | null;
     locationType: string;
     specializations: string[];
+    profilePhotoUrl: string | null;
     isVerified: boolean;
   };
   slots: Slot[];
@@ -38,6 +41,7 @@ const SPEC_OPTIONS = Object.entries(SPECIALIZATION_LABELS) as [string, string][]
 
 export function ExpertProfileForm({ profile, slots }: ExpertProfileFormProps) {
   const router = useRouter();
+  const { update: updateSession } = useSession();
   const { toast } = useToast();
 
   const [form, setForm] = useState({
@@ -49,6 +53,7 @@ export function ExpertProfileForm({ profile, slots }: ExpertProfileFormProps) {
     province: profile.province ?? "",
     locationType: profile.locationType ?? "ONLINE",
     specializations: profile.specializations ?? [],
+    profilePhotoUrl: profile.profilePhotoUrl ?? "",
   });
 
   // One range per day for the editor (first slot of each day if present).
@@ -92,11 +97,13 @@ export function ExpertProfileForm({ profile, slots }: ExpertProfileFormProps) {
           province: form.province || null,
           locationType: form.locationType,
           specializations: form.specializations,
+          profilePhotoUrl: form.profilePhotoUrl || null,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Gagal");
       toast({ title: "Profil tersimpan" });
+      await updateSession(); // refresh JWT so the avatar updates everywhere
       router.refresh();
     } catch (err) {
       toast({
@@ -160,6 +167,20 @@ export function ExpertProfileForm({ profile, slots }: ExpertProfileFormProps) {
       {/* ─── Profil ─── */}
       <section className="bg-white rounded-2xl border border-sand-200 p-5 space-y-4">
         <h2 className="font-serif font-bold text-lg text-forest-500">Profil Pakar</h2>
+
+        <div className="space-y-1.5">
+          <Label className="text-forest-500 font-medium">Foto Profil</Label>
+          <FileUpload
+            accept="image/*"
+            folder="avatars"
+            label="Unggah Foto"
+            preview
+            currentUrl={form.profilePhotoUrl || null}
+            onUploaded={(url) => setForm((f) => ({ ...f, profilePhotoUrl: url }))}
+            onClear={() => setForm((f) => ({ ...f, profilePhotoUrl: "" }))}
+            maxSizeMB={5}
+          />
+        </div>
 
         <div className="space-y-1.5">
           <Label className="text-forest-500 font-medium">Bio</Label>

@@ -40,6 +40,7 @@ export default async function ExpertProfilePage() {
           province: profile.province,
           locationType: profile.locationType,
           specializations: profile.specializations,
+          profilePhotoUrl: profile.profilePhotoUrl,
           isVerified: profile.isVerified,
         }}
         slots={slots}

@@ -4,27 +4,24 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import {
-  FileText,
-  Video,
-  BookOpen,
-  Lock,
-  LockOpen,
-  Eye,
-  Clock,
-  ArrowRight,
-} from "lucide-react";
+import { Lock, LockOpen, Eye, Clock, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PremiumGateModal } from "@/components/knowledge/premium-gate-modal";
 import { CATEGORY_LABELS, formatDate } from "@/lib/utils";
+import {
+  CONTENT_TYPE_ICON as TYPE_ICON,
+  CONTENT_TYPE_LABEL as TYPE_LABEL,
+  CONTENT_TYPE_COLOR as TYPE_COLOR,
+} from "@/lib/knowledge";
+import type { ContentType } from "@prisma/client";
 
 interface ContentItem {
   id: string;
   title: string;
   slug: string;
   excerpt: string | null;
-  type: "ARTICLE" | "VIDEO" | "MODULE";
+  type: ContentType;
   category: string;
   isPremium: boolean;
   thumbnailUrl: string | null;
@@ -40,19 +37,6 @@ interface ContentGridProps {
   perPage: number;
   isPremium: boolean;
 }
-
-const TYPE_ICON = {
-  ARTICLE: FileText,
-  VIDEO: Video,
-  MODULE: BookOpen,
-};
-
-const TYPE_LABEL = { ARTICLE: "Artikel", VIDEO: "Video", MODULE: "Modul" };
-const TYPE_COLOR = {
-  ARTICLE: "text-forest-500 bg-forest-50 border-forest-100",
-  VIDEO: "text-teal-dark bg-teal-dark/5 border-teal-dark/20",
-  MODULE: "text-olive-500 bg-olive-50 border-olive-100",
-};
 
 export function ContentGrid({ contents, total, page, perPage, isPremium }: ContentGridProps) {
   const router = useRouter();
@@ -97,12 +81,13 @@ export function ContentGrid({ contents, total, page, perPage, isPremium }: Conte
               {/* Thumbnail */}
               <div className="relative h-40 bg-sand-100">
                 {content.thumbnailUrl ? (
-                  <Image
+                  // Plain <img>: thumbnails are served via the auth-gated blob
+                  // proxy, which next/image's optimizer (no cookies) can't reach.
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
                     src={content.thumbnailUrl}
                     alt={content.title}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    className="absolute inset-0 w-full h-full object-cover"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
