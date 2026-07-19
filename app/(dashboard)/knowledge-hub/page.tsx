@@ -93,7 +93,7 @@ export default async function KnowledgeHubPage({
           <Button asChild className="bg-forest-500 hover:bg-forest-600 text-white flex-shrink-0">
             <Link href="/knowledge-hub/saya">
               <PenLine className="w-4 h-4 mr-1.5" />
-              Artikel Saya
+              {session.user.role === "ADMIN" ? "Kelola Konten" : "Artikel Saya"}
             </Link>
           </Button>
         )}

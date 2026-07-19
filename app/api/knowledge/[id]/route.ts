@@ -6,7 +6,8 @@ import { z } from "zod";
 const UpdateSchema = z.object({
   title: z.string().min(4).max(160).optional(),
   excerpt: z.string().max(400).optional().nullable(),
-  content: z.string().min(20).optional(),
+  content: z.string().optional().nullable(),
+  type: z.enum(["ARTICLE", "VIDEO", "MODULE", "LINK", "PHOTO"]).optional(),
   category: z
     .enum([
       "LEARNING_DIFFICULTIES",
@@ -20,6 +21,9 @@ const UpdateSchema = z.object({
     .optional(),
   isPremium: z.boolean().optional(),
   thumbnailUrl: z.string().max(2000).optional().nullable(),
+  videoUrl: z.string().max(2000).optional().nullable(),
+  externalUrl: z.string().url().optional().nullable(),
+  fileUrl: z.string().max(2000).optional().nullable(),
   readTimeMins: z.number().int().min(1).max(600).optional().nullable(),
 });
 

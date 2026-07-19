@@ -28,22 +28,44 @@ const TYPES = [
   { value: "MODULE", label: "Modul" },
 ];
 
-export function ArticleForm() {
+export interface ArticleInitial {
+  title: string;
+  category: string;
+  type: string;
+  excerpt: string | null;
+  content: string | null;
+  externalUrl: string | null;
+  videoUrl: string | null;
+  fileUrl: string | null;
+  thumbnailUrl: string | null;
+  readTimeMins: number | null;
+  isPremium: boolean;
+}
+
+export function ArticleForm({
+  mode = "create",
+  contentId,
+  initial,
+}: {
+  mode?: "create" | "edit";
+  contentId?: string;
+  initial?: ArticleInitial;
+} = {}) {
   const router = useRouter();
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
-    title: "",
-    category: "LEARNING_DIFFICULTIES",
-    type: "ARTICLE",
-    excerpt: "",
-    content: "",
-    externalUrl: "",
-    videoUrl: "",
-    fileUrl: "",
-    thumbnailUrl: "",
-    readTimeMins: "",
-    isPremium: false,
+    title: initial?.title ?? "",
+    category: initial?.category ?? "LEARNING_DIFFICULTIES",
+    type: initial?.type ?? "ARTICLE",
+    excerpt: initial?.excerpt ?? "",
+    content: initial?.content ?? "",
+    externalUrl: initial?.externalUrl ?? "",
+    videoUrl: initial?.videoUrl ?? "",
+    fileUrl: initial?.fileUrl ?? "",
+    thumbnailUrl: initial?.thumbnailUrl ?? "",
+    readTimeMins: initial?.readTimeMins != null ? String(initial.readTimeMins) : "",
+    isPremium: initial?.isPremium ?? false,
   });
 
   function set<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
@@ -60,26 +82,29 @@ export function ArticleForm() {
   async function submit() {
     setSaving(true);
     try {
-      const res = await fetch("/api/knowledge", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: form.title,
-          category: form.category,
-          type: form.type,
-          excerpt: form.excerpt || null,
-          content: isText ? form.content : null,
-          externalUrl: form.type === "LINK" ? form.externalUrl : null,
-          videoUrl: form.type === "VIDEO" ? form.videoUrl : null,
-          fileUrl: form.type === "PHOTO" ? form.fileUrl : null,
-          thumbnailUrl: form.thumbnailUrl || null,
-          readTimeMins: form.readTimeMins ? parseInt(form.readTimeMins) : null,
-          isPremium: form.isPremium,
-        }),
-      });
+      const res = await fetch(
+        mode === "edit" ? `/api/knowledge/${contentId}` : "/api/knowledge",
+        {
+          method: mode === "edit" ? "PATCH" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: form.title,
+            category: form.category,
+            type: form.type,
+            excerpt: form.excerpt || null,
+            content: isText ? form.content : null,
+            externalUrl: form.type === "LINK" ? form.externalUrl : null,
+            videoUrl: form.type === "VIDEO" ? form.videoUrl : null,
+            fileUrl: form.type === "PHOTO" ? form.fileUrl : null,
+            thumbnailUrl: form.thumbnailUrl || null,
+            readTimeMins: form.readTimeMins ? parseInt(form.readTimeMins) : null,
+            isPremium: form.isPremium,
+          }),
+        }
+      );
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Gagal");
-      toast({ title: "Konten dipublikasikan" });
+      toast({ title: mode === "edit" ? "Perubahan tersimpan" : "Konten dipublikasikan" });
       router.push("/knowledge-hub/saya");
       router.refresh();
     } catch (err) {
@@ -168,7 +193,7 @@ export function ArticleForm() {
 
       <Button onClick={submit} disabled={saving || !form.title || !mainReady} className="bg-forest-500 hover:bg-forest-600 text-white">
         {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
-        Publikasikan
+        {mode === "edit" ? "Simpan Perubahan" : "Publikasikan"}
       </Button>
     </div>
   );

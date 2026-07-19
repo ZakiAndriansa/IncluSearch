@@ -4,7 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { formatDate, CATEGORY_LABELS } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Clock, Eye, Crown, ExternalLink } from "lucide-react";
+import { ArrowLeft, Clock, Eye, Crown, ExternalLink, Pencil } from "lucide-react";
+import { DeleteContentButton } from "@/components/knowledge/delete-content-button";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -88,13 +89,25 @@ export default async function KnowledgeContentPage({
 
   return (
     <div className="max-w-3xl mx-auto space-y-6 animate-fade-in">
-      {/* Back */}
-      <Button asChild variant="ghost" size="sm" className="text-sand-500 -ml-2">
-        <Link href="/knowledge-hub">
-          <ArrowLeft className="w-4 h-4 mr-1" />
-          Kembali ke Knowledge Hub
-        </Link>
-      </Button>
+      {/* Back + manage actions */}
+      <div className="flex items-center justify-between gap-2">
+        <Button asChild variant="ghost" size="sm" className="text-sand-500 -ml-2">
+          <Link href="/knowledge-hub">
+            <ArrowLeft className="w-4 h-4 mr-1" />
+            Kembali ke Knowledge Hub
+          </Link>
+        </Button>
+        {(session.user.role === "ADMIN" || content.authorId === session.user.id) && (
+          <div className="flex items-center gap-2">
+            <Button asChild variant="outline" size="sm" className="border-sand-300">
+              <Link href={`/knowledge-hub/${content.slug}/edit`}>
+                <Pencil className="w-3.5 h-3.5 mr-1" /> Edit
+              </Link>
+            </Button>
+            <DeleteContentButton id={content.id} redirectTo="/knowledge-hub" />
+          </div>
+        )}
+      </div>
 
       {/* Thumbnail */}
       {content.thumbnailUrl && (
