@@ -67,6 +67,7 @@ const ADMIN_NAV: NavItem[] = [
   { href: "/admin/keuangan", label: "Keuangan", icon: Wallet },
   { href: "/admin/kalender", label: "Kalender", icon: CalendarDays },
   { href: "/admin/asesmen", label: "Asesmen", icon: ClipboardList },
+  { href: "/admin/forum", label: "Forum", icon: Users2 },
   { href: "/knowledge-hub", label: "Knowledge Hub", icon: BookOpen },
 ];
 

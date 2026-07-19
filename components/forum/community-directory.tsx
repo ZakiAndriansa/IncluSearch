@@ -200,12 +200,11 @@ export function CommunityDirectory({
                 <div className="flex items-start gap-3 mb-3">
                   <div className="w-12 h-12 rounded-xl bg-sand-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
                     {community.logoUrl ? (
-                      <Image
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
                         src={community.logoUrl}
                         alt={community.name}
-                        width={48}
-                        height={48}
-                        className="object-cover"
+                        className="w-full h-full object-cover"
                       />
                     ) : (
                       <Building2 className="w-6 h-6 text-sand-400" />

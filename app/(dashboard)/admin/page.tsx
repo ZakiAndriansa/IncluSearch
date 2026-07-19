@@ -27,6 +27,7 @@ const ADMIN_LINKS = [
   { href: "/admin/asesmen", label: "Database Asesmen", desc: "Asesmen awal & pakar", icon: ClipboardList },
   { href: "/admin/pakar", label: "Akun Pakar", desc: "Kelola & verifikasi", icon: Users },
   { href: "/admin/orang-tua", label: "Akun Orang Tua", desc: "Database orang tua", icon: Users2 },
+  { href: "/admin/forum", label: "Kelola Forum", desc: "Komunitas ke-ABK-an", icon: Building2 },
   { href: "/knowledge-hub/tulis", label: "Tulis Artikel", desc: "Input Knowledge Hub", icon: PenLine },
 ];
 
