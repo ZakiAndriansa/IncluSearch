@@ -16,6 +16,7 @@ import {
   Star,
   ClipboardList,
   Wallet,
+  Globe,
   ChevronLeft,
   ChevronRight,
   X,
@@ -68,6 +69,7 @@ const ADMIN_NAV: NavItem[] = [
   { href: "/admin/kalender", label: "Kalender", icon: CalendarDays },
   { href: "/admin/asesmen", label: "Asesmen", icon: ClipboardList },
   { href: "/admin/forum", label: "Forum", icon: Users2 },
+  { href: "/admin/landing", label: "Landing Page", icon: Globe },
   { href: "/knowledge-hub", label: "Knowledge Hub", icon: BookOpen },
 ];
 

@@ -16,6 +16,7 @@ import {
   PenLine,
   ChevronRight,
   Users2,
+  Globe,
 } from "lucide-react";
 import Link from "next/link";
 import { VerifyExpertButton } from "@/components/admin/verify-expert-button";
@@ -28,6 +29,7 @@ const ADMIN_LINKS = [
   { href: "/admin/pakar", label: "Akun Pakar", desc: "Kelola & verifikasi", icon: Users },
   { href: "/admin/orang-tua", label: "Akun Orang Tua", desc: "Database orang tua", icon: Users2 },
   { href: "/admin/forum", label: "Kelola Forum", desc: "Komunitas ke-ABK-an", icon: Building2 },
+  { href: "/admin/landing", label: "Landing Page", desc: "Edit teks, foto & video", icon: Globe },
   { href: "/knowledge-hub/tulis", label: "Tulis Artikel", desc: "Input Knowledge Hub", icon: PenLine },
 ];
 

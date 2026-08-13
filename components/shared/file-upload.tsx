@@ -18,6 +18,8 @@ interface FileUploadProps {
   /** show a preview image thumbnail for image uploads */
   preview?: boolean;
   maxSizeMB?: number;
+  /** upload endpoint; defaults to the auth-gated private-blob uploader */
+  endpoint?: string;
 }
 
 export function FileUpload({
@@ -29,6 +31,7 @@ export function FileUpload({
   label = "Unggah file",
   preview = false,
   maxSizeMB = 100,
+  endpoint = "/api/blob/upload",
 }: FileUploadProps) {
   const { toast } = useToast();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -48,7 +51,7 @@ export function FileUpload({
       const fd = new FormData();
       fd.append("file", file);
       fd.append("folder", folder);
-      const res = await fetch("/api/blob/upload", { method: "POST", body: fd });
+      const res = await fetch(endpoint, { method: "POST", body: fd });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Upload gagal");
       onUploaded(data.url, file.name);

@@ -567,3 +567,16 @@ model Payment {
   @@index([userId, type, createdAt])
   @@index([status])
 }
+
+// ─────────────────────────────────────────────
+// LANDING PAGE CMS (singleton)
+// ─────────────────────────────────────────────
+
+// One row (id = "landing") holding all editable landing-page content as JSON.
+// Admin edits it via /admin/landing; the public page merges it over the code
+// defaults in lib/landing.ts, so an empty/absent row renders the defaults.
+model LandingContent {
+  id        String   @id @default("landing")
+  data      Json
+  updatedAt DateTime @updatedAt
+}

@@ -3,11 +3,6 @@ import Image from "next/image";
 import { redirect } from "next/navigation";
 import {
   Users,
-  MessageCircle,
-  BookOpen,
-  ClipboardList,
-  Users2,
-  CalendarDays,
   Play,
   ArrowRight,
   CheckCircle2,
@@ -15,10 +10,11 @@ import {
   ShieldCheck,
   Sparkles,
   HeartHandshake,
-  Search,
 } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getLandingData } from "@/lib/landing.server";
+import { FEATURE_META } from "@/lib/landing";
 import { Button } from "@/components/ui/button";
 import { LandingNav } from "@/components/landing/landing-nav";
 import { Reveal } from "@/components/landing/reveal";
@@ -35,77 +31,15 @@ export const metadata: Metadata = {
     "Temukan pakar ortopedagogik terverifikasi, akses Knowledge Hub, dan bergabung dengan komunitas peduli ABK. Konsultasi terjadwal, asesmen, dan pendampingan dalam satu platform.",
 };
 
-// ── Feature list mirrors the real product menus (kept in sync with the sidebar) ──
-const FEATURES = [
-  {
-    icon: Search,
-    title: "Cari Pakar yang Cocok",
-    desc: "Algoritma kecocokan mencocokkan kebutuhan anak dengan spesialisasi & pengalaman pakar — bukan sekadar daftar acak.",
-    color: "text-forest-500",
-    bg: "bg-forest-50",
-  },
-  {
-    icon: MessageCircle,
-    title: "Konsultasi Terjadwal",
-    desc: "Ruang chat terbuka tepat pada tanggal & jam yang dijadwalkan, sehingga sesi selalu fokus dan tepat waktu.",
-    color: "text-teal-dark",
-    bg: "bg-teal-dark/5",
-  },
-  {
-    icon: ClipboardList,
-    title: "Asesmen Awal",
-    desc: "Isi asesmen ringkas tentang kondisi anak untuk mendapatkan rekomendasi pakar yang paling relevan.",
-    color: "text-olive-500",
-    bg: "bg-olive-50",
-  },
-  {
-    icon: BookOpen,
-    title: "Knowledge Hub",
-    desc: "Kumpulan artikel, video, modul, dan tautan tepercaya seputar pendampingan ABK dari para pakar.",
-    color: "text-teal-dark",
-    bg: "bg-teal-dark/5",
-  },
-  {
-    icon: Users2,
-    title: "Forum Komunitas",
-    desc: "Terhubung dengan yayasan, sekolah, pusat terapi, dan kelompok dukungan di seluruh Indonesia.",
-    color: "text-forest-500",
-    bg: "bg-forest-50",
-  },
-  {
-    icon: CalendarDays,
-    title: "Kalender & Jadwal",
-    desc: "Pantau semua sesi konsultasi dalam satu kalender rapi, lengkap dengan pengingat waktu sesi.",
-    color: "text-olive-500",
-    bg: "bg-olive-50",
-  },
-];
-
-const STEPS = [
-  {
-    no: "01",
-    title: "Daftar & Buat Asesmen",
-    desc: "Buat akun gratis, lalu isi asesmen singkat tentang kebutuhan dan kondisi anak Anda.",
-  },
-  {
-    no: "02",
-    title: "Temukan Pakar Terbaik",
-    desc: "Kami tampilkan pakar terverifikasi dengan skor kecocokan tertinggi untuk kebutuhan tersebut.",
-  },
-  {
-    no: "03",
-    title: "Konsultasi & Dampingi",
-    desc: "Jadwalkan sesi, konsultasi lewat ruang chat terjadwal, dan dampingi tumbuh kembang anak.",
-  },
-];
-
 export default async function LandingPage() {
   const session = await auth();
   // Logged-in users belong in the app, not the marketing page.
   if (session) redirect("/beranda");
 
-  // Real figures from the database — no hardcoded marketing numbers.
-  const [expertCount, familyCount, contentCount, ratingAgg] = await Promise.all([
+  // Editable content (from the admin CMS, merged over code defaults) +
+  // real figures from the database — no hardcoded marketing numbers.
+  const [content, expertCount, familyCount, contentCount, ratingAgg] = await Promise.all([
+    getLandingData(),
     prisma.expertProfile.count({ where: { isVerified: true } }),
     prisma.user.count({ where: { role: "PARENT" } }),
     prisma.knowledgeContent.count(),
@@ -116,12 +50,12 @@ export default async function LandingPage() {
   ]);
   const avgRating = ratingAgg._avg.rating;
 
-  // Numeric values so the counters can animate; render "—" when there's no data.
+  // Numeric values so the counters can animate; labels are editable.
   const stats = [
-    { value: expertCount, label: "Pakar Terverifikasi" },
-    { value: familyCount, label: "Keluarga Bergabung" },
-    { value: contentCount, label: "Konten Edukasi" },
-    { value: avgRating ?? 0, decimals: 1, suffix: "/5", label: "Rating Kepuasan" },
+    { value: expertCount, label: content.statsLabels[0] },
+    { value: familyCount, label: content.statsLabels[1] },
+    { value: contentCount, label: content.statsLabels[2] },
+    { value: avgRating ?? 0, decimals: 1, suffix: "/5", label: content.statsLabels[3] },
   ];
 
   return (
@@ -142,19 +76,17 @@ export default async function LandingPage() {
           <div className="space-y-6 animate-fade-in">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-forest-50 border border-forest-100 text-forest-600 text-sm font-medium">
               <span className="w-2 h-2 rounded-full bg-olive-500 animate-pulse" />
-              Platform Terpercaya untuk ABK
+              {content.hero.badge}
             </div>
 
             <h1 className="text-4xl sm:text-5xl xl:text-6xl font-serif font-bold leading-[1.1]">
-              Bersama kita dukung{" "}
-              <span className="text-olive-500">tumbuh kembang</span> anak yang
-              luar biasa
+              {content.hero.titleBefore}
+              <span className="text-olive-500">{content.hero.titleHighlight}</span>
+              {content.hero.titleAfter}
             </h1>
 
             <p className="text-sand-700 text-lg leading-relaxed max-w-xl">
-              Temukan pakar ortopedagogik terbaik, akses pengetahuan berkualitas,
-              dan bergabung dengan komunitas yang peduli terhadap Anak
-              Berkebutuhan Khusus — semua dalam satu tempat.
+              {content.hero.subtitle}
             </p>
 
             <div className="flex flex-wrap items-center gap-3 pt-1">
@@ -164,7 +96,7 @@ export default async function LandingPage() {
                 className="bg-forest-500 hover:bg-forest-600 text-white h-12 px-6 text-base transition-transform hover:-translate-y-0.5"
               >
                 <Link href="/register">
-                  Mulai Sekarang <ArrowRight className="w-4 h-4 ml-1.5" />
+                  {content.hero.primaryCta} <ArrowRight className="w-4 h-4 ml-1.5" />
                 </Link>
               </Button>
               <Button
@@ -175,17 +107,17 @@ export default async function LandingPage() {
                 // kunci agar teks tetap forest di atas latar putih.
                 className="h-12 px-6 text-base border-sand-300 text-forest-500 hover:bg-white hover:text-forest-600 hover:border-forest-300"
               >
-                <a href="#cara-kerja">Pelajari Cara Kerja</a>
+                <a href="#cara-kerja">{content.hero.secondaryCta}</a>
               </Button>
             </div>
 
             {/* Trust bullets */}
             <div className="flex flex-wrap gap-x-5 gap-y-2 pt-2 text-sm text-sand-600">
               <span className="flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-olive-500" /> Gratis untuk mendaftar
+                <CheckCircle2 className="w-4 h-4 text-olive-500" /> {content.hero.trust1}
               </span>
               <span className="flex items-center gap-1.5">
-                <ShieldCheck className="w-4 h-4 text-teal-dark" /> Pakar terverifikasi
+                <ShieldCheck className="w-4 h-4 text-teal-dark" /> {content.hero.trust2}
               </span>
             </div>
           </div>
@@ -193,13 +125,12 @@ export default async function LandingPage() {
           {/* Visual */}
           <div className="relative animate-fade-in">
             <div className="relative aspect-[4/5] sm:aspect-[5/5] max-w-md mx-auto rounded-[2rem] overflow-hidden border border-sand-200 shadow-xl">
-              <Image
-                src="/landing/hero.jpg"
+              {/* Editable media (default static or /api/landing/media proxy) → plain <img> */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={content.hero.image}
                 alt="Pendampingan anak berkebutuhan khusus bersama pakar"
-                fill
-                sizes="(max-width: 1024px) 100vw, 480px"
-                className="object-cover"
-                priority
+                className="absolute inset-0 w-full h-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-forest-900/40 via-transparent to-transparent" />
             </div>
@@ -261,33 +192,32 @@ export default async function LandingPage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <Reveal className="text-center max-w-2xl mx-auto mb-12">
             <div className="inline-flex items-center gap-2 text-teal-dark text-sm font-semibold mb-3">
-              <Sparkles className="w-4 h-4" /> Fitur Utama
+              <Sparkles className="w-4 h-4" /> {content.features.eyebrow}
             </div>
-            <h2 className="text-3xl sm:text-4xl font-serif font-bold">
-              Semua yang Anda butuhkan untuk mendampingi
-            </h2>
-            <p className="text-sand-600 mt-3 text-lg">
-              Dari menemukan pakar yang tepat hingga belajar mandiri — IncluSearch
-              menyatukannya dalam satu alur yang sederhana.
-            </p>
+            <h2 className="text-3xl sm:text-4xl font-serif font-bold">{content.features.title}</h2>
+            <p className="text-sand-600 mt-3 text-lg">{content.features.subtitle}</p>
           </Reveal>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {FEATURES.map((f, i) => (
-              <Reveal key={f.title} delay={i * 0.07} className="h-full">
-                <div className="group h-full bg-white rounded-2xl border border-sand-200 p-6 transition-all hover:border-forest-300 hover:shadow-md hover:-translate-y-1">
-                  <div
-                    className={`w-12 h-12 rounded-xl ${f.bg} flex items-center justify-center mb-4 transition-transform group-hover:scale-110`}
-                  >
-                    <f.icon className={`w-6 h-6 ${f.color}`} />
+            {content.features.items.map((f, i) => {
+              const meta = FEATURE_META[i] ?? FEATURE_META[FEATURE_META.length - 1];
+              const Icon = meta.icon;
+              return (
+                <Reveal key={i} delay={i * 0.07} className="h-full">
+                  <div className="group h-full bg-white rounded-2xl border border-sand-200 p-6 transition-all hover:border-forest-300 hover:shadow-md hover:-translate-y-1">
+                    <div
+                      className={`w-12 h-12 rounded-xl ${meta.bg} flex items-center justify-center mb-4 transition-transform group-hover:scale-110`}
+                    >
+                      <Icon className={`w-6 h-6 ${meta.color}`} />
+                    </div>
+                    <h3 className="font-serif font-semibold text-lg text-forest-500 mb-1.5">
+                      {f.title}
+                    </h3>
+                    <p className="text-sm text-sand-600 leading-relaxed">{f.desc}</p>
                   </div>
-                  <h3 className="font-serif font-semibold text-lg text-forest-500 mb-1.5">
-                    {f.title}
-                  </h3>
-                  <p className="text-sm text-sand-600 leading-relaxed">{f.desc}</p>
-                </div>
-              </Reveal>
-            ))}
+                </Reveal>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -298,16 +228,14 @@ export default async function LandingPage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <Reveal className="text-center max-w-2xl mx-auto mb-12">
             <div className="inline-flex items-center gap-2 text-olive-500 text-sm font-semibold mb-3">
-              <HeartHandshake className="w-4 h-4" /> Cara Kerja
+              <HeartHandshake className="w-4 h-4" /> {content.steps.eyebrow}
             </div>
-            <h2 className="text-3xl sm:text-4xl font-serif font-bold">
-              Tiga langkah menuju pendampingan yang tepat
-            </h2>
+            <h2 className="text-3xl sm:text-4xl font-serif font-bold">{content.steps.title}</h2>
           </Reveal>
 
           <div className="grid md:grid-cols-3 gap-6">
-            {STEPS.map((s, i) => (
-              <Reveal key={s.no} delay={i * 0.1} className="relative">
+            {content.steps.items.map((s, i) => (
+              <Reveal key={i} delay={i * 0.1} className="relative">
                 {/* kartu putih agar menonjol di atas band hijau (sebelumnya: bg-sand-50) */}
                 <div className="group bg-white rounded-2xl border border-sand-200 p-6 h-full transition-all hover:shadow-md hover:-translate-y-1">
                   <div className="text-5xl font-serif font-bold text-forest-100 mb-3 transition-colors group-hover:text-olive-200">
@@ -318,7 +246,7 @@ export default async function LandingPage() {
                   </h3>
                   <p className="text-sm text-sand-600 leading-relaxed">{s.desc}</p>
                 </div>
-                {i < STEPS.length - 1 && (
+                {i < content.steps.items.length - 1 && (
                   <ArrowRight className="hidden md:block absolute top-1/2 -right-3 -translate-y-1/2 w-6 h-6 text-sand-300" />
                 )}
               </Reveal>
@@ -333,19 +261,17 @@ export default async function LandingPage() {
         <div className="max-w-5xl mx-auto px-4 sm:px-6">
           <Reveal className="text-center max-w-2xl mx-auto mb-10">
             <div className="inline-flex items-center gap-2 text-teal-light text-sm font-semibold mb-3">
-              <Play className="w-4 h-4" /> Video Profil
+              <Play className="w-4 h-4" /> {content.video.eyebrow}
             </div>
             <h2 className="text-3xl sm:text-4xl font-serif font-bold text-white">
-              Kenali IncluSearch lebih dekat
+              {content.video.title}
             </h2>
-            <p className="text-white/70 mt-3 text-lg">
-              Tonton bagaimana kami menghubungkan keluarga dengan pakar yang tepat.
-            </p>
+            <p className="text-white/70 mt-3 text-lg">{content.video.subtitle}</p>
           </Reveal>
 
-          {/* Poster interaktif: klik → modal (Esc / klik luar untuk menutup) */}
+          {/* Poster interaktif: klik → modal (memutar video jika ada) */}
           <Reveal delay={0.1}>
-            <VideoPlayer />
+            <VideoPlayer poster={content.video.poster} src={content.video.url} />
           </Reveal>
         </div>
       </section>
@@ -356,11 +282,9 @@ export default async function LandingPage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <Reveal className="text-center max-w-2xl mx-auto mb-12">
             <div className="inline-flex items-center gap-2 text-forest-500 text-sm font-semibold mb-3">
-              <Users className="w-4 h-4" /> Untuk Siapa
+              <Users className="w-4 h-4" /> {content.audience.eyebrow}
             </div>
-            <h2 className="text-3xl sm:text-4xl font-serif font-bold">
-              Dibuat untuk mereka yang peduli
-            </h2>
+            <h2 className="text-3xl sm:text-4xl font-serif font-bold">{content.audience.title}</h2>
           </Reveal>
 
           <div className="grid md:grid-cols-2 gap-6">
@@ -371,19 +295,14 @@ export default async function LandingPage() {
                   <Users className="w-6 h-6 text-forest-500" />
                 </div>
                 <h3 className="font-serif font-semibold text-xl text-forest-500 mb-2">
-                  Orang Tua &amp; Guru
+                  {content.audience.parent.title}
                 </h3>
                 <p className="text-sm text-sand-600 leading-relaxed mb-4">
-                  Dapatkan rekomendasi pakar yang sesuai, konsultasi terjadwal, dan
-                  akses konten edukasi untuk mendampingi anak setiap hari.
+                  {content.audience.parent.desc}
                 </p>
                 <ul className="space-y-2 text-sm text-sand-700">
-                  {[
-                    "Rekomendasi pakar berbasis asesmen",
-                    "Konsultasi lewat ruang chat terjadwal",
-                    "Knowledge Hub & forum komunitas",
-                  ].map((t) => (
-                    <li key={t} className="flex items-start gap-2">
+                  {content.audience.parent.bullets.map((t, i) => (
+                    <li key={i} className="flex items-start gap-2">
                       <CheckCircle2 className="w-4 h-4 text-olive-500 mt-0.5 flex-shrink-0" />
                       {t}
                     </li>
@@ -391,7 +310,7 @@ export default async function LandingPage() {
                 </ul>
                 <Button asChild className="mt-6 bg-forest-500 hover:bg-forest-600 text-white">
                   <Link href="/register">
-                    Daftar sebagai Orang Tua <ArrowRight className="w-4 h-4 ml-1.5" />
+                    {content.audience.parent.ctaLabel} <ArrowRight className="w-4 h-4 ml-1.5" />
                   </Link>
                 </Button>
               </div>
@@ -404,19 +323,14 @@ export default async function LandingPage() {
                   <Star className="w-6 h-6 text-teal-dark" />
                 </div>
                 <h3 className="font-serif font-semibold text-xl text-forest-500 mb-2">
-                  Pakar Ortopedagogik
+                  {content.audience.expert.title}
                 </h3>
                 <p className="text-sm text-sand-600 leading-relaxed mb-4">
-                  Jangkau keluarga yang membutuhkan keahlian Anda, atur jadwal dan
-                  tarif, serta kelola konsultasi dengan mudah.
+                  {content.audience.expert.desc}
                 </p>
                 <ul className="space-y-2 text-sm text-sand-700">
-                  {[
-                    "Profil & jadwal yang dapat diatur sendiri",
-                    "Kalender konsultasi & rekap penghasilan",
-                    "Bagikan keahlian lewat Knowledge Hub",
-                  ].map((t) => (
-                    <li key={t} className="flex items-start gap-2">
+                  {content.audience.expert.bullets.map((t, i) => (
+                    <li key={i} className="flex items-start gap-2">
                       <CheckCircle2 className="w-4 h-4 text-teal-dark mt-0.5 flex-shrink-0" />
                       {t}
                     </li>
@@ -429,7 +343,7 @@ export default async function LandingPage() {
                   className="mt-6 border-teal-dark/30 text-teal-dark hover:bg-teal-dark/5 hover:text-teal-dark hover:border-teal-dark/50"
                 >
                   <Link href="/register">
-                    Bergabung sebagai Pakar <ArrowRight className="w-4 h-4 ml-1.5" />
+                    {content.audience.expert.ctaLabel} <ArrowRight className="w-4 h-4 ml-1.5" />
                   </Link>
                 </Button>
               </div>
@@ -448,12 +362,9 @@ export default async function LandingPage() {
             </div>
             <div className="relative z-10 max-w-2xl mx-auto space-y-6">
               <h2 className="text-3xl sm:text-4xl font-serif font-bold text-white">
-                Siap memulai perjalanan bersama kami?
+                {content.cta.title}
               </h2>
-              <p className="text-white/70 text-lg">
-                Bergabunglah dengan keluarga dan pakar lain yang telah mempercayai
-                IncluSearch untuk mendampingi Anak Berkebutuhan Khusus.
-              </p>
+              <p className="text-white/70 text-lg">{content.cta.subtitle}</p>
               <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
                 <Button
                   asChild
@@ -461,7 +372,7 @@ export default async function LandingPage() {
                   className="bg-white text-forest-500 hover:bg-sand-100 h-12 px-6 text-base transition-transform hover:-translate-y-0.5"
                 >
                   <Link href="/register">
-                    Daftar Gratis <ArrowRight className="w-4 h-4 ml-1.5" />
+                    {content.cta.primary} <ArrowRight className="w-4 h-4 ml-1.5" />
                   </Link>
                 </Button>
                 <Button
@@ -473,7 +384,7 @@ export default async function LandingPage() {
                   // normal = transparan + teks putih, hover = latar putih + teks forest.
                   className="h-12 px-6 text-base bg-transparent border-2 border-white/60 text-white hover:bg-white hover:text-forest-500"
                 >
-                  <Link href="/login">Sudah punya akun? Masuk</Link>
+                  <Link href="/login">{content.cta.secondary}</Link>
                 </Button>
               </div>
             </div>
@@ -493,7 +404,7 @@ export default async function LandingPage() {
               className="h-9 w-auto object-contain"
             />
             <p className="text-sm text-sand-500 max-w-xs text-center sm:text-left">
-              Pendamping tumbuh kembang Anak Berkebutuhan Khusus.
+              {content.footer.tagline}
             </p>
           </div>
           <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-sand-600">
