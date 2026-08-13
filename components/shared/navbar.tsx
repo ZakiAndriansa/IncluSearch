@@ -44,7 +44,7 @@ export function Navbar({ user }: NavbarProps) {
           >
             <Menu className="w-5 h-5" />
           </button>
-          <Link href="/" className="flex items-center">
+          <Link href="/beranda" className="flex items-center">
             <Image
               src="/logo.png"
               alt="IncluSearch"

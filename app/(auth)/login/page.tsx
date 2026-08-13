@@ -38,13 +38,13 @@ export default function LoginPage() {
       return;
     }
 
-    router.push("/");
+    router.push("/beranda");
     router.refresh();
   }
 
   async function handleGoogleLogin() {
     setIsLoading(true);
-    await signIn("google", { callbackUrl: "/" });
+    await signIn("google", { callbackUrl: "/beranda" });
   }
 
   return (

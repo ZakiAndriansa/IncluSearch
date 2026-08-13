@@ -59,7 +59,7 @@ export default function RegisterPage() {
         redirect: false,
       });
 
-      router.push("/");
+      router.push("/beranda");
       router.refresh();
     } catch (err: unknown) {
       toast({

@@ -4,6 +4,7 @@ import type { NextRequest } from "next/server";
 
 // Protected routes that require authentication
 const PROTECTED_PATHS = [
+  "/beranda",
   "/cari-pakar",
   "/knowledge-hub",
   "/konsultasi",
@@ -44,7 +45,7 @@ export async function middleware(request: NextRequest) {
   // Admin route protection
   const isAdminPath = ADMIN_PATHS.some((p) => pathname.startsWith(p));
   if (isAdminPath && session.user.role !== "ADMIN") {
-    return NextResponse.redirect(new URL("/", request.url));
+    return NextResponse.redirect(new URL("/beranda", request.url));
   }
 
   return NextResponse.next();

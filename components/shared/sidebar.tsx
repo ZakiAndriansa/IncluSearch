@@ -34,7 +34,7 @@ interface NavItem {
 }
 
 const PARENT_NAV: NavItem[] = [
-  { href: "/", label: "Beranda", icon: LayoutDashboard, exact: true },
+  { href: "/beranda", label: "Beranda", icon: LayoutDashboard, exact: true },
   { href: "/cari-pakar", label: "Cari Pakar", icon: Users },
   { href: "/knowledge-hub", label: "Knowledge Hub", icon: BookOpen },
   { href: "/konsultasi", label: "Konsultasi Saya", icon: MessageCircle },
@@ -43,7 +43,7 @@ const PARENT_NAV: NavItem[] = [
 ];
 
 const EXPERT_NAV: NavItem[] = [
-  { href: "/", label: "Beranda", icon: LayoutDashboard, exact: true },
+  { href: "/beranda", label: "Beranda", icon: LayoutDashboard, exact: true },
   { href: "/konsultasi", label: "Jadwal Konsultasi", icon: MessageCircle },
   { href: "/pakar/asesmen", label: "Asesmen Klien", icon: ClipboardList },
   { href: "/pakar/kalender", label: "Kalender & Gaji", icon: CalendarDays },
@@ -53,7 +53,7 @@ const EXPERT_NAV: NavItem[] = [
 ];
 
 const ADMIN_NAV: NavItem[] = [
-  { href: "/", label: "Beranda", icon: LayoutDashboard, exact: true },
+  { href: "/beranda", label: "Beranda", icon: LayoutDashboard, exact: true },
   {
     href: "/admin",
     label: "Panel Admin",
