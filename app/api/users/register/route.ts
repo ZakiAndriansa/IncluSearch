@@ -4,11 +4,13 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
 
+// Pendaftaran publik TIDAK menerima `role`: apa pun yang dikirim klien
+// diabaikan dan akun selalu dibuat sebagai PARENT. Akun PAKAR hanya dibuat
+// oleh admin (pakar tetap bisa login, tapi tidak bisa sign up sebagai pakar).
 const RegisterSchema = z.object({
   name: z.string().min(2, "Nama minimal 2 karakter"),
   email: z.string().email("Email tidak valid"),
   password: z.string().min(8, "Password minimal 8 karakter"),
-  role: z.enum(["PARENT", "EXPERT"]).default("PARENT"),
 });
 
 export async function POST(request: Request) {
@@ -35,7 +37,7 @@ export async function POST(request: Request) {
           name: data.name,
           email: data.email,
           password: hashedPassword,
-          role: data.role,
+          role: "PARENT", // selalu PARENT — pakar hanya dibuat admin
         },
       });
 

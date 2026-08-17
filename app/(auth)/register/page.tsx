@@ -14,10 +14,13 @@ import { useToast } from "@/components/ui/use-toast";
 // `role` is the persisted UserRole enum — the schema has no TEACHER role yet,
 // so both self-identifications map to PARENT. Add a `profession` field (or a
 // TEACHER enum value) if the parent/teacher distinction ever needs storing.
+//
+// NOTE: pendaftaran publik hanya untuk orang tua / guru. Akun PAKAR tidak bisa
+// dibuat lewat sign-up — pakar hanya ditambahkan oleh admin (mereka tetap bisa
+// login seperti biasa). Server juga memaksa role = PARENT (lihat API register).
 const USER_ROLES = [
   { id: "parent", role: "PARENT", label: "Orang Tua / Wali", desc: "Saya orang tua / wali anak ABK" },
   { id: "teacher", role: "PARENT", label: "Guru / Pendidik", desc: "Saya pendidik yang mendampingi ABK" },
-  { id: "expert", role: "EXPERT", label: "Pakar / Terapis", desc: "Saya pakar ortopedagogik / terapis ABK" },
 ] as const;
 
 export default function RegisterPage() {
