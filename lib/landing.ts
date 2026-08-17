@@ -24,6 +24,8 @@ export interface LandingAudienceCard {
   desc: string;
   bullets: string[];
   ctaLabel: string;
+  /** Tombol tujuan bebas (path/URL/mailto/tel). Kosong → tombol disembunyikan. */
+  ctaHref: string;
 }
 
 export interface LandingData {
@@ -181,6 +183,7 @@ export const DEFAULT_LANDING: LandingData = {
         "Knowledge Hub & forum komunitas",
       ],
       ctaLabel: "Daftar sebagai Orang Tua",
+      ctaHref: "/register",
     },
     expert: {
       title: "Pakar Ortopedagogik",
@@ -191,6 +194,9 @@ export const DEFAULT_LANDING: LandingData = {
         "Bagikan keahlian lewat Knowledge Hub",
       ],
       ctaLabel: "Bergabung sebagai Pakar",
+      // Kosong secara default: tidak ada ajakan daftar pakar di landing sampai
+      // admin mengisi tujuannya via CMS.
+      ctaHref: "",
     },
   },
   cta: {

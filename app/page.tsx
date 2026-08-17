@@ -1,6 +1,5 @@
 import Link from "next/link";
 import Image from "next/image";
-import { redirect } from "next/navigation";
 import {
   Users,
   Play,
@@ -33,8 +32,9 @@ export const metadata: Metadata = {
 
 export default async function LandingPage() {
   const session = await auth();
-  // Logged-in users belong in the app, not the marketing page.
-  if (session) redirect("/beranda");
+  // The welcome page stays accessible even when signed in — the nav & CTAs
+  // adapt so it's clear the user is still logged in.
+  const loggedIn = !!session;
 
   // Editable content (from the admin CMS, merged over code defaults) +
   // real figures from the database — no hardcoded marketing numbers.
@@ -58,9 +58,13 @@ export default async function LandingPage() {
     { value: avgRating ?? 0, decimals: 1, suffix: "/5", label: content.statsLabels[3] },
   ];
 
+  // Tautan eksternal (http/https) dibuka di tab baru; path internal / mailto / tel tetap.
+  const extProps = (href: string) =>
+    /^https?:\/\//.test(href) ? { target: "_blank" as const, rel: "noopener noreferrer" } : {};
+
   return (
     <div className="min-h-screen bg-sand-50 text-forest-500">
-      <LandingNav />
+      <LandingNav loggedIn={loggedIn} />
 
       {/* ───────────────── Hero ───────────────── */}
       {/* wash hijau muda → sand (sebelumnya: tanpa gradient) */}
@@ -95,9 +99,15 @@ export default async function LandingPage() {
                 size="lg"
                 className="bg-forest-500 hover:bg-forest-600 text-white h-12 px-6 text-base transition-transform hover:-translate-y-0.5"
               >
-                <Link href="/register">
-                  {content.hero.primaryCta} <ArrowRight className="w-4 h-4 ml-1.5" />
-                </Link>
+                {loggedIn ? (
+                  <Link href="/beranda">
+                    Buka Beranda <ArrowRight className="w-4 h-4 ml-1.5" />
+                  </Link>
+                ) : (
+                  <Link href="/register">
+                    {content.hero.primaryCta} <ArrowRight className="w-4 h-4 ml-1.5" />
+                  </Link>
+                )}
               </Button>
               <Button
                 asChild
@@ -308,11 +318,13 @@ export default async function LandingPage() {
                     </li>
                   ))}
                 </ul>
-                <Button asChild className="mt-6 bg-forest-500 hover:bg-forest-600 text-white">
-                  <Link href="/register">
-                    {content.audience.parent.ctaLabel} <ArrowRight className="w-4 h-4 ml-1.5" />
-                  </Link>
-                </Button>
+                {content.audience.parent.ctaHref && (
+                  <Button asChild className="mt-6 bg-forest-500 hover:bg-forest-600 text-white">
+                    <a href={content.audience.parent.ctaHref} {...extProps(content.audience.parent.ctaHref)}>
+                      {content.audience.parent.ctaLabel} <ArrowRight className="w-4 h-4 ml-1.5" />
+                    </a>
+                  </Button>
+                )}
               </div>
             </Reveal>
 
@@ -336,16 +348,18 @@ export default async function LandingPage() {
                     </li>
                   ))}
                 </ul>
-                <Button
-                  asChild
-                  variant="outline"
-                  // kunci teks tetap teal saat hover (outline defaultnya jadi putih → nyaru)
-                  className="mt-6 border-teal-dark/30 text-teal-dark hover:bg-teal-dark/5 hover:text-teal-dark hover:border-teal-dark/50"
-                >
-                  <Link href="/register">
-                    {content.audience.expert.ctaLabel} <ArrowRight className="w-4 h-4 ml-1.5" />
-                  </Link>
-                </Button>
+                {content.audience.expert.ctaHref && (
+                  <Button
+                    asChild
+                    variant="outline"
+                    // kunci teks tetap teal saat hover (outline defaultnya jadi putih → nyaru)
+                    className="mt-6 border-teal-dark/30 text-teal-dark hover:bg-teal-dark/5 hover:text-teal-dark hover:border-teal-dark/50"
+                  >
+                    <a href={content.audience.expert.ctaHref} {...extProps(content.audience.expert.ctaHref)}>
+                      {content.audience.expert.ctaLabel} <ArrowRight className="w-4 h-4 ml-1.5" />
+                    </a>
+                  </Button>
+                )}
               </div>
             </Reveal>
           </div>
@@ -366,26 +380,40 @@ export default async function LandingPage() {
               </h2>
               <p className="text-white/70 text-lg">{content.cta.subtitle}</p>
               <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-                <Button
-                  asChild
-                  size="lg"
-                  className="bg-white text-forest-500 hover:bg-sand-100 h-12 px-6 text-base transition-transform hover:-translate-y-0.5"
-                >
-                  <Link href="/register">
-                    {content.cta.primary} <ArrowRight className="w-4 h-4 ml-1.5" />
-                  </Link>
-                </Button>
-                <Button
-                  asChild
-                  size="lg"
-                  variant="outline"
-                  // outline membawa `bg-background` (terang) + `hover:text-accent-foreground`,
-                  // jadi kita override eksplisit agar teks selalu kontras:
-                  // normal = transparan + teks putih, hover = latar putih + teks forest.
-                  className="h-12 px-6 text-base bg-transparent border-2 border-white/60 text-white hover:bg-white hover:text-forest-500"
-                >
-                  <Link href="/login">{content.cta.secondary}</Link>
-                </Button>
+                {loggedIn ? (
+                  <Button
+                    asChild
+                    size="lg"
+                    className="bg-white text-forest-500 hover:bg-sand-100 h-12 px-6 text-base transition-transform hover:-translate-y-0.5"
+                  >
+                    <Link href="/beranda">
+                      Buka Beranda <ArrowRight className="w-4 h-4 ml-1.5" />
+                    </Link>
+                  </Button>
+                ) : (
+                  <>
+                    <Button
+                      asChild
+                      size="lg"
+                      className="bg-white text-forest-500 hover:bg-sand-100 h-12 px-6 text-base transition-transform hover:-translate-y-0.5"
+                    >
+                      <Link href="/register">
+                        {content.cta.primary} <ArrowRight className="w-4 h-4 ml-1.5" />
+                      </Link>
+                    </Button>
+                    <Button
+                      asChild
+                      size="lg"
+                      variant="outline"
+                      // outline membawa `bg-background` (terang) + `hover:text-accent-foreground`,
+                      // jadi kita override eksplisit agar teks selalu kontras:
+                      // normal = transparan + teks putih, hover = latar putih + teks forest.
+                      className="h-12 px-6 text-base bg-transparent border-2 border-white/60 text-white hover:bg-white hover:text-forest-500"
+                    >
+                      <Link href="/login">{content.cta.secondary}</Link>
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </Reveal>

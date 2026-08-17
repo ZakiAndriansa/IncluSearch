@@ -15,7 +15,7 @@ const LINKS = [
   { href: "#untuk-siapa", label: "Untuk Siapa" },
 ];
 
-export function LandingNav() {
+export function LandingNav({ loggedIn = false }: { loggedIn?: boolean }) {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState("");
   const { scrollYProgress } = useScroll();
@@ -80,16 +80,24 @@ export function LandingNav() {
 
         {/* Desktop actions */}
         <div className="hidden md:flex items-center gap-2">
-          <Button
-            asChild
-            variant="ghost"
-            className="text-forest-500 hover:bg-sand-100 hover:text-forest-600"
-          >
-            <Link href="/login">Masuk</Link>
-          </Button>
-          <Button asChild className="bg-forest-500 hover:bg-forest-600 text-white">
-            <Link href="/register">Daftar Gratis</Link>
-          </Button>
+          {loggedIn ? (
+            <Button asChild className="bg-forest-500 hover:bg-forest-600 text-white">
+              <Link href="/beranda">Buka Beranda</Link>
+            </Button>
+          ) : (
+            <>
+              <Button
+                asChild
+                variant="ghost"
+                className="text-forest-500 hover:bg-sand-100 hover:text-forest-600"
+              >
+                <Link href="/login">Masuk</Link>
+              </Button>
+              <Button asChild className="bg-forest-500 hover:bg-forest-600 text-white">
+                <Link href="/register">Daftar Gratis</Link>
+              </Button>
+            </>
+          )}
         </div>
 
         {/* Mobile toggle */}
@@ -132,12 +140,20 @@ export function LandingNav() {
             </a>
           ))}
           <div className="flex flex-col gap-2 pt-3 border-t border-sand-100 mt-2">
-            <Button asChild variant="outline" className="border-sand-300 text-forest-500">
-              <Link href="/login">Masuk</Link>
-            </Button>
-            <Button asChild className="bg-forest-500 hover:bg-forest-600 text-white">
-              <Link href="/register">Daftar Gratis</Link>
-            </Button>
+            {loggedIn ? (
+              <Button asChild className="bg-forest-500 hover:bg-forest-600 text-white">
+                <Link href="/beranda">Buka Beranda</Link>
+              </Button>
+            ) : (
+              <>
+                <Button asChild variant="outline" className="border-sand-300 text-forest-500">
+                  <Link href="/login">Masuk</Link>
+                </Button>
+                <Button asChild className="bg-forest-500 hover:bg-forest-600 text-white">
+                  <Link href="/register">Daftar Gratis</Link>
+                </Button>
+              </>
+            )}
           </div>
         </nav>
       </div>

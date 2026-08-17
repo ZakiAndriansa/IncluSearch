@@ -258,7 +258,7 @@ export function LandingEditor({ initial }: { initial: LandingData }) {
 
   const setAudienceCard = (
     which: "parent" | "expert",
-    key: "title" | "desc" | "ctaLabel",
+    key: "title" | "desc" | "ctaLabel" | "ctaHref",
     v: string
   ) =>
     setData((d) => ({
@@ -549,6 +549,12 @@ export function LandingEditor({ initial }: { initial: LandingData }) {
                       <TextField key={i} label={`Poin ${i + 1}`} value={b} onChange={(v) => setBullet(which, i, v)} />
                     ))}
                     <TextField label="Teks tombol" value={data.audience[which].ctaLabel} onChange={(v) => setAudienceCard(which, "ctaLabel", v)} />
+                    <TextField
+                      label="Link tombol — kosongkan untuk sembunyikan"
+                      value={data.audience[which].ctaHref}
+                      placeholder="/register · https://wa.me/62… · mailto:…"
+                      onChange={(v) => setAudienceCard(which, "ctaHref", v)}
+                    />
                   </div>
                 );
               })}

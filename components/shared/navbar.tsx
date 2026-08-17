@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Crown, User, ClipboardList, ShieldCheck, LogOut, Menu } from "lucide-react";
+import { Crown, User, ClipboardList, ShieldCheck, LogOut, Menu, Globe } from "lucide-react";
 import { useNavSettings } from "@/components/shared/nav-settings";
 
 import { signOut } from "next-auth/react";
@@ -129,6 +129,12 @@ export function Navbar({ user }: NavbarProps) {
                 <Link href="/profil" className="flex items-center gap-2">
                   <User className="w-4 h-4 text-sand-400" />
                   Profil Saya
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/" className="flex items-center gap-2">
+                  <Globe className="w-4 h-4 text-sand-400" />
+                  Welcome Page
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>

@@ -50,12 +50,14 @@ const landingSchema = z.object({
       desc: line(400),
       bullets: z.array(line(160)).max(8),
       ctaLabel: line(60),
+      ctaHref: line(300),
     }),
     expert: z.object({
       title: line(120),
       desc: line(400),
       bullets: z.array(line(160)).max(8),
       ctaLabel: line(60),
+      ctaHref: line(300),
     }),
   }),
   cta: z.object({
