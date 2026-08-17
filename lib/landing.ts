@@ -194,9 +194,7 @@ export const DEFAULT_LANDING: LandingData = {
         "Bagikan keahlian lewat Knowledge Hub",
       ],
       ctaLabel: "Bergabung sebagai Pakar",
-      // Kosong secara default: tidak ada ajakan daftar pakar di landing sampai
-      // admin mengisi tujuannya via CMS.
-      ctaHref: "",
+      ctaHref: "/register",
     },
   },
   cta: {
