@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { snapScriptUrl } from "@/lib/midtrans-client";
 import { ArrowLeft, CreditCard, Loader2 } from "lucide-react";
 
 export default function BayarPage() {
@@ -41,10 +42,7 @@ export default function BayarPage() {
   useEffect(() => {
     if (!paymentData?.token || !paymentData.clientKey) return;
 
-    const isProduction = paymentData.clientKey.startsWith("Mid-client-") && !paymentData.clientKey.startsWith("SB-");
-    const src = isProduction
-      ? "https://app.midtrans.com/snap/snap.js"
-      : "https://app.sandbox.midtrans.com/snap/snap.js";
+    const src = snapScriptUrl(paymentData.clientKey);
 
     if ((window as any).snap) {
       openSnap(paymentData.token);

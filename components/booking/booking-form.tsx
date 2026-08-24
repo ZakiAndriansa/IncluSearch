@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, getInitials, SPECIALIZATION_LABELS } from "@/lib/utils";
+import { snapScriptUrl } from "@/lib/midtrans-client";
 import { CalendarDays, Clock, Star, AlertCircle, Crown, ArrowLeft } from "lucide-react";
 
 const DAY_LABELS = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
@@ -173,16 +174,8 @@ export function BookingForm({
 
   return (
     <>
-      {/* Midtrans Snap script */}
-      <script
-        src={
-          process.env.NEXT_PUBLIC_MIDTRANS_IS_SANDBOX === "true"
-            ? "https://app.sandbox.midtrans.com/snap/snap.js"
-            : "https://app.midtrans.com/snap/snap.js"
-        }
-        data-client-key={clientKey}
-        async
-      />
+      {/* Midtrans Snap script — sandbox/production auto-detected from the key */}
+      <script src={snapScriptUrl(clientKey)} data-client-key={clientKey} async />
 
       <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
         {/* Back */}

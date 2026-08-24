@@ -5,7 +5,11 @@ import { settlePayment, cancelPayment, PaymentFinalError } from "@/lib/settlemen
 
 const MIDTRANS_SERVER_KEY = process.env.MIDTRANS_SERVER_KEY ?? "";
 const MIDTRANS_CLIENT_KEY = process.env.MIDTRANS_CLIENT_KEY ?? "";
-const IS_SANDBOX = process.env.MIDTRANS_IS_SANDBOX === "true" || MIDTRANS_SERVER_KEY.startsWith("SB-");
+// Environment is derived purely from the server key prefix: Midtrans sandbox
+// keys start with "SB-", production keys do not. Swap in production keys and
+// every request (Snap create + status check) targets production automatically —
+// no MIDTRANS_IS_SANDBOX flag to keep in sync.
+const IS_SANDBOX = MIDTRANS_SERVER_KEY.startsWith("SB-");
 
 /** Fail loudly (instead of silently building `Basic base64("undefined:")`) if keys are missing. */
 function assertMidtransConfigured() {
